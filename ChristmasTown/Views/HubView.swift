@@ -48,8 +48,10 @@ struct HubView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
             HStack(spacing: 10) {
-                Btn(s.paidToday ? "📋 Jobs ✅" : "📋 Jobs \(game.jobsDone)/\(s.jobs.count)", s.paidToday ? Pal.green : Pal.red, size: 20) { game.showJobs = true }
-                Btn("💤 Sleep", Pal.night, size: 20) { if s.paidToday { game.sleep() } else { confirmSleep = true } }
+                Btn(s.paidToday ? "📋 Jobs ✅" : "📋 Jobs \(game.jobsDone)/\(s.jobs.count)", s.paidToday ? Pal.green : Pal.red, size: 16) { game.showJobs = true }
+                CornerButton(icon: "📅", color: Pal.darkRed, badge: game.adventDay > 0 && !Set(1...game.adventDay).isSubset(of: game.adventOpenedThisYear) ? "!" : nil) { game.go(.advent) }
+                CornerButton(icon: "📒", color: Pal.purple, badge: game.newStickers > 0 ? "\(game.newStickers)" : nil) { game.go(.stickers) }
+                Btn("💤 Sleep", Pal.night, size: 16) { if s.paidToday { game.sleep() } else { confirmSleep = true } }
             }
         }
         .padding(.horizontal, 10).padding(.vertical, 8)
@@ -88,9 +90,13 @@ struct HubView: View {
     case .greenhouse: return s.plots.contains { [1, 3].contains($0.stage(game.now)) } ? "!" : nil
     case .bakery: return job(.bake, unlock: 1)
     case .stable: return job(.reindeer, unlock: 1)
-    case .workshop: return job(.toys, unlock: 1)
+    case .workshop:
+        if s.jobs.first(where: { $0.kind == .toys })?.finished == true && s.jobs.first(where: { $0.kind == .wrap })?.finished == false && !s.paidToday { return "!" }
+        return job(.toys, unlock: 1)
     case .santaList: return job(.sortList, unlock: 2)
     case .sleigh: return job(.deliver, unlock: 3)
+    case .park: return s.jobs.contains { $0.kind == .tree } ? job(.tree, unlock: 7) : s.snowballDay != s.day ? "!" : nil
+    case .pets: return s.pets.contains { $0.fullness(game.now) < 0.4 || $0.cleanness(game.now) < 0.4 } ? "!" : nil
     case .decorate: return Item.allCases.contains { game.available($0) > 0 } ? "New" : nil
     case .friends: return npcs.contains { !s.talkedToday.contains($0.name) } ? "!" : nil
     case .phone:
@@ -182,9 +188,14 @@ struct LivingRoom: View {
                 // Your elf and a baby reindeer buddy
                 HStack(alignment: .bottom, spacing: 0) {
                     ElfPx(look: game.s.look, height: 200).bob(4, 0.9)
-                    Px(Sprites.reindeer(rudolph: true), 54).bob(3, 0.65)
+                    ReindeerPx(name: game.sleighTeam.first ?? "Dasher", decos: game.decosOn(game.sleighTeam.first ?? "Dasher"), height: 54).bob(3, 0.65)
                 }
                 .position(x: w / 2, y: floorY + 70 - 100)
+
+                // Your pets wander around (tap them!)
+                ForEach(Array(game.s.pets.prefix(3).enumerated()), id: \.element.id) { i, pet in
+                    WanderingPet(pet: pet, roomW: w, floorY: floorY + 40, index: i, now: game.now)
+                }
 
                 // Table of today's goodies
                 VStack(spacing: 0) {

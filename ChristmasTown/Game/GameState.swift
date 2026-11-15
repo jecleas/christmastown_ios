@@ -63,8 +63,42 @@ struct Save: Codable {
     var memory: [String: String] = [:]
     var musicOn = true
     var soundOn = true
+    // Expansion (all with defaults so older saves still load)
+    var wrapped = 0
+    var townTree: [Ornament] = []
+    var snowballDay = 0
+    var gingerHouses = 0
+    var pets: [Pet] = []
+    var washed: Set<String> = []
+    var decos: Set<Deco> = []
+    var reindeerDecos: [String: Set<Deco>] = [:]
+    var team: [String] = []
+    var adventYear = 0
+    var adventOpened: Set<Int> = []
+    var stickers: Set<String> = []
+    var stickersSeen = 0
+    var prizesClaimed: Set<Int> = []
 
     init() {}
+
+    /// Adds stickers you've earned just by what's in your save (things you own, pets, friends...).
+    mutating func addStickers() {
+        func k<T: RawRepresentable>(_ v: T) -> String where T.RawValue == String { v.rawValue.prefix(1).uppercased() + v.rawValue.dropFirst() }
+        var earned: Set<String> = []
+        for (c, n) in cookies where n > 0 { earned.insert("cookie:\(k(c))") }
+        for (t, n) in toys where n > 0 { earned.insert("toy:\(k(t))") }
+        for r in fed.intersection(brushed).intersection(washed) { earned.insert("deer:\(r)") }
+        for p in pets { earned.insert("pet:\(k(p.kind))") }
+        for (i, n) in owned where n > 0 { earned.insert("item:\(k(i))") }
+        if wrapped > 0 { earned.insert("wrap") }
+        if gingerHouses > 0 { earned.insert("ginger") }
+        if !townTree.isEmpty { earned.insert("tree") }
+        if !bestGifts.isEmpty { earned.insert("friend") }
+        if levelFor(workdays) >= maxLevel { earned.insert("level8") }
+        if christmasDone { earned.insert("christmas") }
+        if !adventOpened.isEmpty { earned.insert("advent") }
+        if !earned.isSubset(of: stickers) { stickers.formUnion(earned) }
+    }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -81,8 +115,17 @@ struct Save: Codable {
         jobs = v(.jobs, d.jobs); kids = v(.kids, d.kids); kidIndex = v(.kidIndex, d.kidIndex)
         chats = v(.chats, d.chats); lastRead = v(.lastRead, d.lastRead); lastGroupVisit = v(.lastGroupVisit, d.lastGroupVisit); memory = v(.memory, d.memory)
         musicOn = v(.musicOn, d.musicOn); soundOn = v(.soundOn, d.soundOn)
+        wrapped = v(.wrapped, d.wrapped); townTree = v(.townTree, d.townTree); snowballDay = v(.snowballDay, d.snowballDay)
+        gingerHouses = v(.gingerHouses, d.gingerHouses); pets = v(.pets, d.pets); washed = v(.washed, d.washed)
+        decos = v(.decos, d.decos); reindeerDecos = v(.reindeerDecos, d.reindeerDecos); team = v(.team, d.team)
+        adventYear = v(.adventYear, d.adventYear); adventOpened = v(.adventOpened, d.adventOpened); stickers = v(.stickers, d.stickers)
+        stickersSeen = v(.stickersSeen, d.stickersSeen); prizesClaimed = v(.prizesClaimed, d.prizesClaimed)
+        addStickers()
     }
 }
+
+/// One ornament hung on the Town Tree (x/y are fractions of the tree picture).
+struct Ornament: Codable, Hashable { var kind: Int; var color: Int; var x: Double; var y: Double }
 
 @MainActor @Observable
 final class GameState {
@@ -98,6 +141,8 @@ final class GameState {
     var christmasEveRide = false
     var selectedSeed: Crop = .wheat
     var now = Date().timeIntervalSince1970
+    /// A mini-game can ask for its own song while it's on screen.
+    var gameSong: Music?
 
     @ObservationIgnored private var toastUntil = 0.0
     @ObservationIgnored private var timer: Timer?
@@ -118,6 +163,7 @@ final class GameState {
 
     private func update(_ change: (inout Save) -> Void) {
         change(&s)
+        s.addStickers()
         if let data = try? JSONEncoder().encode(s) { UserDefaults.standard.set(data, forKey: Self.key) }
     }
 
@@ -141,6 +187,9 @@ final class GameState {
         update { $0.energy -= amount }
         return true
     }
+
+    /// Uses energy for a mini-game (shows "too tired" if you can't).
+    func spend(_ amount: Int) -> Bool { useEnergy(amount) }
 
     /// Checks (without using) energy, so mini-games only start if you can finish them.
     func hasEnergy(_ amount: Int) -> Bool {
@@ -187,7 +236,8 @@ final class GameState {
         let worked = s.paidToday
         update { save in
             save.day += 1; save.energy = 100; save.paidToday = false; save.fed = []; save.brushed = []; save.talkedToday = []
-            save.jobs = jobsFor(levelFor(save.workdays)); save.kids = makeKids(5); save.kidIndex = 0
+            save.jobs = jobsFor(levelFor(save.workdays)); save.kids = makeKids([5, 5, 5, 5, 5, 5, 6, 6][levelFor(save.workdays) - 1]); save.kidIndex = 0
+            save.washed = []
         }
         overlay = .morning(day: s.day, worked: worked)
         place = nil
@@ -310,12 +360,14 @@ final class GameState {
 
     // MARK: Delivery
 
-    var presents: Int { s.toys.values.reduce(0, +) }
+    var presents: Int { s.toys.values.reduce(0, +) + s.wrapped }
 
+    /// Uses one present: a wrapped one first, then a plain toy (or one of Santa's on Christmas Eve).
     func deliver() -> Bool {
         if christmasEveRide { Audio.shared.play(.presentDrop); return true }
-        guard let toy = s.toys.first(where: { $0.value > 0 })?.key else { say("No presents left! Make toys in the Workshop 🧸"); Audio.shared.play(.oops); return false }
-        update { $0.toys[toy, default: 0] -= 1 }
+        if s.wrapped > 0 { update { $0.wrapped -= 1 } }
+        else if let toy = s.toys.first(where: { $0.value > 0 })?.key { update { $0.toys[toy, default: 0] -= 1 } }
+        else { say("No presents left! Make toys in the Workshop 🧸"); Audio.shared.play(.oops); return false }
         Audio.shared.play(.presentDrop)
         progress(.deliver)
         return true
@@ -342,6 +394,168 @@ final class GameState {
             christmasEveRide = false
             if finishedChristmas { update { $0.christmasDone = true }; overlay = .won }
         }
+    }
+
+    // MARK: Reindeer care (wash, decorate, harness)
+
+    func wash(_ name: String) {
+        guard !s.washed.contains(name), useEnergy(2) else { return }
+        update { $0.washed.insert(name) }
+        say("\(name) is squeaky clean! 🛁")
+        Audio.shared.play(.ding)
+    }
+
+    func decosOn(_ name: String) -> Set<Deco> { s.reindeerDecos[name] ?? [] }
+
+    func buyDeco(_ d: Deco) {
+        guard !s.decos.contains(d) else { return }
+        if pay(d.price) { update { $0.decos.insert(d) }; say("You got \(d.title)! \(d.emoji) Tap it to put it on a reindeer.") }
+    }
+
+    func toggleDeco(_ name: String, _ d: Deco) {
+        if !s.decos.contains(d) { buyDeco(d); if !s.decos.contains(d) { return } }
+        var on = decosOn(name)
+        if on.contains(d) { on.remove(d) } else { on.insert(d) }
+        update { $0.reindeerDecos[name] = on }
+        Audio.shared.play(.sleighBells)
+    }
+
+    /// The reindeer pulling the sleigh (up to `teamSize`). If you never picked, the first ones go.
+    var sleighTeam: [String] {
+        let t = s.team.filter { reindeer.contains($0) }
+        return t.isEmpty ? Array(reindeer.prefix(teamSize)) : t
+    }
+
+    func toggleTeam(_ name: String) {
+        let t = s.team.filter { reindeer.contains($0) }
+        if t.contains(name) { update { $0.team = t.filter { $0 != name } } }
+        else if t.count >= teamSize { say("The sleigh only fits \(teamSize) reindeer! Unhitch one first."); Audio.shared.play(.oops) }
+        else { update { $0.team = t + [name] }; say("\(name) is hitched to the sleigh! 🛷"); Audio.shared.play(.sleighBells) }
+    }
+
+    /// 0…teamSize: how many sleigh reindeer are fed and brushed today. Happy reindeer steer better.
+    var teamPower: Int { sleighTeam.filter { s.fed.contains($0) && s.brushed.contains($0) }.count }
+
+    // MARK: Wrapping presents
+
+    func startWrap(_ toy: Toy) -> Bool {
+        guard s.toys[toy, default: 0] > 0 else { say("You don't have a \(toy.title)! Make one in the Workshop 🧸"); Audio.shared.play(.oops); return false }
+        return hasEnergy(3)
+    }
+
+    func finishWrap(_ toy: Toy) {
+        guard s.toys[toy, default: 0] > 0, useEnergy(3) else { return }
+        update { $0.toys[toy, default: 0] -= 1; $0.wrapped += 1 }
+        say("A beautiful present! 🎁 Wrapped presents go on the sleigh first.")
+        Audio.shared.play(.ding)
+        progress(.wrap)
+    }
+
+    // MARK: Gingerbread house
+
+    let gingerRecipe: [(Crop, Int)] = [(.wheat, 3)]
+    func canBuildHouse() -> Bool { gingerRecipe.allSatisfy { s.crops[$0.0, default: 0] >= $0.1 } }
+
+    func finishGingerHouse() {
+        guard canBuildHouse(), useEnergy(5) else { return }
+        update { save in
+            for (c, n) in gingerRecipe { save.crops[c, default: 0] -= n }
+            save.owned[.gingerbreadHouse, default: 0] += 1
+            save.gingerHouses += 1
+        }
+        say("Your gingerbread house is in storage. Put it out at Home! 🏠")
+        Audio.shared.play(.levelUp)
+    }
+
+    // MARK: Town tree
+
+    func finishTree(_ ornaments: [Ornament]) {
+        update { $0.townTree = ornaments }
+        say("The Town Tree looks AMAZING! 🎄✨")
+        Audio.shared.play(.levelUp)
+        progress(.tree)
+    }
+
+    // MARK: Snowball fight
+
+    /// Friends you play with get a little closer (once a day).
+    func snowballDone(hits: Int, friends: [Npc]) {
+        if s.snowballDay != s.day && hits >= 3 {
+            update { save in
+                save.snowballDay = save.day
+                for f in friends { save.hearts[f.name] = min(5, save.hearts[f.name, default: 0] + 1) }
+            }
+            say("What a snowball fight! Your friends had a blast 💖")
+            friends.forEach { checkBestFriend($0) }
+        } else { say(hits >= 3 ? "Snow much fun! ❄️" : "Brrr! Try again and hit 3 friends! ❄️") }
+    }
+
+    // MARK: Pets
+
+    func buyPet(_ kind: PetKind) {
+        guard pay(kind.price) else { return }
+        let taken = Set(s.pets.map(\.name))
+        let name = petNames.filter { !taken.contains($0) }.randomElement() ?? petNames.randomElement()!
+        let id = (s.pets.map(\.id).max() ?? 0) + 1
+        let t = Date().timeIntervalSince1970
+        update { $0.pets.append(Pet(id: id, kind: kind, name: name, fedAt: t, washedAt: t)) }
+        say("Meet \(name) the \(kind.title)! \(kind.noise) 💖")
+    }
+
+    private func petCare(_ id: Int, _ change: (inout Pet, Double) -> Void) {
+        let t = Date().timeIntervalSince1970
+        guard let i = s.pets.firstIndex(where: { $0.id == id }) else { return }
+        update { change(&$0.pets[i], t) }
+        let pet = s.pets[i]
+        // Good care reward: a little gift once a day when every meter is high.
+        if pet.fullness(t) > 0.8 && pet.cleanness(t) > 0.8 && pet.happiness(t) > 0.8 && pet.giftDay != s.day {
+            let gift = [Food.candy, .hotCocoa, .candy].randomElement()!
+            update { $0.pets[i].giftDay = $0.day; $0.food[gift, default: 0] += 1 }
+            say("\(pet.name) is SO happy, they found you a \(gift.title)! 🎁")
+            Audio.shared.play(.coins)
+        }
+    }
+
+    func feedPet(_ id: Int) { petCare(id) { $0.fedAt = $1 } }
+    func washPet(_ id: Int) { petCare(id) { $0.washedAt = $1 } }
+    func cuddlePet(_ id: Int) { petCare(id) { $0.pettedAt = $1 } }
+
+    // MARK: Advent calendar
+
+    private var today: DateComponents { Calendar.current.dateComponents([.year, .month, .day], from: Date()) }
+    /// Doors you may open: 1…today in December (none before Dec 1). Missed days can still be opened.
+    var adventDay: Int { today.month == 12 ? min(24, today.day ?? 0) : 0 }
+    var daysToAdvent: Int {
+        guard today.month != 12, let dec1 = Calendar.current.date(from: DateComponents(year: today.year, month: 12, day: 1)) else { return 0 }
+        return Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: Date()), to: dec1).day ?? 0
+    }
+    var adventOpenedThisYear: Set<Int> { s.adventYear == today.year ? s.adventOpened : [] }
+
+    func openAdvent(_ door: Int) -> Surprise? {
+        guard door <= adventDay, !adventOpenedThisYear.contains(door) else { return nil }
+        let gift = adventSurprises[door - 1]
+        let year = today.year ?? 0
+        update { save in
+            if save.adventYear != year { save.adventOpened = [] }
+            save.adventYear = year
+            save.adventOpened.insert(door)
+            gift.give(&save)
+        }
+        Audio.shared.play(.levelUp)
+        return gift
+    }
+
+    // MARK: Sticker book
+
+    func sticker(_ id: String) { if !s.stickers.contains(id) { update { $0.stickers.insert(id) } } }
+    var newStickers: Int { max(0, s.stickers.count - s.stickersSeen) }
+    func sawStickers() { if s.stickersSeen != s.stickers.count { update { $0.stickersSeen = $0.stickers.count } } }
+
+    func claimPrize(_ at: Int) {
+        guard let prize = stickerPrizes.first(where: { $0.0 == at })?.1, s.stickers.count >= at, !s.prizesClaimed.contains(at) else { return }
+        update { $0.prizesClaimed.insert(at); prize.give(&$0) }
+        say("Sticker prize: \(prize.title)! 🎁")
+        Audio.shared.play(.levelUp)
     }
 
     // MARK: Shop

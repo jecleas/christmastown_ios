@@ -94,6 +94,8 @@ enum ChatFilter {
             case "Pepper": return "Ooh, let's use kind words, sweetie. 💖 Kind words are like warm cookies!"
             case "Sprout": return "Um... that's not very kind. 🥺 Let's be nice to each other, okay?"
             case "Twinkle": return "Nooo, mean words aren't sparkly! ✨ Let's use kind ones!"
+            case "Holly": return "Hmm, my kindness-o-meter just beeped 📟 Let's try nicer words!"
+            case "Frost": return "Brrr, that was a chilly thing to say! 🥶 Let's keep it warm and kind."
             default: return "Whoa, let's use kind words in Christmas Town! 💖"
             }
         case .ok: return ""
@@ -123,6 +125,14 @@ private let dmQuestions: [String: [Question]] = [
     "Pepper": [
         Question(id: "p_cookie", ask: "What's your favorite cookie? 🍪", options: ["Sugar", "Berry", "Choc chip"], memory: "favCookie") { "Ooh, \($0) cookies! I'll bake an extra batch just for you, sweetie 💕" },
         Question(id: "p_drink", ask: "Hot cocoa or warm milk? ☕", options: ["Hot cocoa", "Warm milk"]) { "\($0) it is! With a cinnamon sprinkle on top 😋" },
+    ],
+    "Holly": [
+        Question(id: "h_invent", ask: "If I built you a robot helper, what should it do? 🤖", options: ["Make cookies", "Walk my pet", "Wrap presents"]) { "A robot that can \($0)? Drawing the plans RIGHT NOW! 📐" },
+        Question(id: "h_power", ask: "Which superpower would you pick? ⚡", options: ["Flying", "Invisibility", "Talking to animals"]) { "\($0)! I'll try to invent it. No promises! 🔬" },
+    ],
+    "Frost": [
+        Question(id: "f_joke", ask: "Want to hear a joke or tell me one? 😆", options: ["Tell me one!", "I'll tell you!"]) { $0.contains("me") ? "What's a snowman's favorite snack? ICE crispy treats! ❄️😂" : "Ooh, go go go! I'm ready to laugh! 😆" },
+        Question(id: "f_build", ask: "What should I sculpt out of snow next? ⛄", options: ["A dragon", "Santa", "A giant cookie"]) { "\($0) made of snow?! That's going to be EPIC. ❄️" },
     ],
     "Sprout": [
         Question(id: "s_deer", ask: "Which reindeer do you like best? 🦌", options: ["Dasher", "Comet", "Rudolph"], memory: "favReindeer") { "\($0) is really sweet. 🥰 I'll tell them you said hi." },
@@ -216,6 +226,8 @@ enum ElfBrain {
         case "Twinkle": [" ✨", " 💖✨", " 🎉", " OMG!"].randomElement()!
         case "Pepper": [" 🍪", " 💕", " sweetie!", ""].randomElement()!
         case "Sprout": [" 🌱", " 🦌", " 🥰", ""].randomElement()!
+        case "Holly": [" 🔬", " Eureka!", " 🤖", ""].randomElement()!
+        case "Frost": [" ❄️", " 😆", " ⛄", " Brrr!"].randomElement()!
         default: ""
         }
     }
@@ -250,12 +262,16 @@ enum ElfBrain {
             case "Jingle": main = "Hey hey, \(name)! 🔧 Ready to build some toys?"
             case "Twinkle": main = "HIIII \(name)!! ✨💖 I was JUST thinking about you!"
             case "Pepper": main = "Hello, sweetie! 🍪 " + (favCookie.map { "Still loving \($0) cookies?" } ?? "Want a warm cookie?")
+            case "Holly": main = "Greetings, \(name)! 🔬 I just finished inventing... a better spoon."
+            case "Frost": main = "Yo yo, \(name)! ❄️ Why are you so cool? Oh wait, that's me. 😎"
             default: main = "Oh! Hi \(name) 👋 " + (favReindeer.map { "\($0) says hi too! 🦌" } ?? "The reindeer say hi! 🦌")
             }
         } else if has(t, "how are you", "how r u", "hru", "how's it going", "hows it going", "how are u", "you ok", "u ok") {
             main = ["Jingle": "SUPER good! I just made a teddy bear with button eyes! 🧸 How are YOU?",
                     "Twinkle": "Amazing!!! I'm planning a surprise party ✨ (shh!) How are you?",
-                    "Pepper": "Warm and toasty, thank you! 🍪 My oven smells like cinnamon. How are you, dear?"][elf]
+                    "Pepper": "Warm and toasty, thank you! 🍪 My oven smells like cinnamon. How are you, dear?",
+                    "Holly": "Excellent! Only one small explosion today 💥 (it was glitter). How are you?",
+                    "Frost": "Ice to see you! 🧊 Get it? I'm great! How are you?"][elf]
                 ?? "Pretty good! Comet licked my face this morning 🦌😊 How are you?"
         } else if has(t, "sad", "upset", "cry", "crying", "lonely", "bad day", "mad", "angry", "scared", "worried", "tired") {
             main = "Aww, I'm sorry you feel that way. 💖 Want a virtual hug? 🤗 If something's really wrong, telling a grown-up you trust always helps. I'm here to chat too!"
@@ -266,9 +282,9 @@ enum ElfBrain {
         } else if has(t, "are you real", "are you a robot", "are you ai", "are you a bot", "are you human", "is this real") {
             main = "I'm \(elf), an elf in Christmas Town! 🧝 I'm a character in this game, so I live inside your phone. But our friendship is real fun! 💖"
         } else if has(t, "your name", "who are you", "what's your name", "whats your name") {
-            main = "I'm \(elf)! " + (["Jingle": "Toy maker extraordinaire 🔧🧸", "Twinkle": "Party planner and glitter expert ✨🎉", "Pepper": "Head baker of Christmas Town 🍪"][elf] ?? "I look after Santa's reindeer 🦌")
+            main = "I'm \(elf)! " + (["Jingle": "Toy maker extraordinaire 🔧🧸", "Twinkle": "Party planner and glitter expert ✨🎉", "Pepper": "Head baker of Christmas Town 🍪", "Holly": "Inventor of mostly-working gadgets 🔬", "Frost": "Snow sculptor and joke champion ❄️😆"][elf] ?? "I look after Santa's reindeer 🦌")
         } else if has(t, "what do you do", "your job", "what's your job", "whats your job") {
-            main = ["Jingle": "I make toys! Trains, robots, teddy bears... ALL the toys! 🔧", "Twinkle": "I plan the BEST parties in the North Pole ✨🎉", "Pepper": "I bake cookies for Santa and everyone! 🍪"][elf]
+            main = ["Jingle": "I make toys! Trains, robots, teddy bears... ALL the toys! 🔧", "Twinkle": "I plan the BEST parties in the North Pole ✨🎉", "Pepper": "I bake cookies for Santa and everyone! 🍪", "Holly": "I invent things! Toy machines, snow cannons, self-stirring bowls... 🔬", "Frost": "I make snow sculptures and tell the BEST jokes ⛄😆"][elf]
                 ?? "I feed and brush the reindeer. They're my best friends 🦌🥕"
         } else if has(t, "money", "paid", "pay", "rich", "coins", "dollars") {
             main = s.paidToday ? "You already got your \(money(dailyPay)) today! 💰 Spend it on something fun in the Shop!" : "Santa pays \(money(dailyPay)) when you finish ALL your jobs. You have \(jobsLeft.count) left today! 📋"
@@ -291,7 +307,7 @@ enum ElfBrain {
         } else if has(t, "christmas", "present", "gift", "snow", "winter", "xmas") {
             main = ["Christmas is the BEST time of year! 🎄", "Did you know it's always snowing in Christmas Town? ❄️", "I already wrapped my presents! 🎁 Well, most of them."].randomElement()!
         } else if has(t, "favorite", "favourite", "like best", "love most") {
-            main = ["Jingle": "My favorite thing? Robots! 🤖 They beep!", "Twinkle": "Glitter. Obviously. ✨✨✨", "Pepper": "Warm cookies straight from the oven 🍪 nothing better!"][elf] ?? "Reindeer. All of them. Even the grumpy ones 🦌💕"
+            main = ["Jingle": "My favorite thing? Robots! 🤖 They beep!", "Twinkle": "Glitter. Obviously. ✨✨✨", "Pepper": "Warm cookies straight from the oven 🍪 nothing better!", "Holly": "Gears! Springs! Anything that goes BOING! 🔩", "Frost": "Snow days. And puns. Snow-puns are the best. ❄️"][elf] ?? "Reindeer. All of them. Even the grumpy ones 🦌💕"
         } else if has(t, "love you", "you're cool", "youre cool", "you are cool", "you're nice", "you're awesome", "you're funny", "best friend", "like you") {
             main = ["Aww, you're the BEST! 💖", "You just made my whole day! 🥰", "Best friends forever! 🤝✨"].randomElement()!
         } else if has(t, "thank", "thx", "ty", "thanks") {

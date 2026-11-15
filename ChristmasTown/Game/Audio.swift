@@ -20,6 +20,11 @@ enum Sfx: String, CaseIterable {
 enum Music: String {
     case jingleBells = "music_jingle_bells", deckTheHalls = "music_deck_the_halls", weWish = "music_we_wish"
     case silentNight = "music_silent_night", sleighRide = "music_sleigh_ride", joyToTheWorld = "music_joy_to_the_world"
+    case oChristmasTree = "music_o_christmas_tree"            // Snow Park (the Town Tree)
+    case upOnTheHousetop = "music_up_on_the_housetop"         // sleigh flight
+    case jollyOldStNicholas = "music_jolly_old_st_nicholas"   // Pets
+    case goodKingWenceslas = "music_good_king_wenceslas"      // snowball fight
+    case twelveDays = "music_twelve_days"                     // wrapping presents
 }
 
 @MainActor

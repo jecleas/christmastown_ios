@@ -182,7 +182,7 @@ struct LivingRoom: View {
                 // Your elf and a baby reindeer buddy
                 HStack(alignment: .bottom, spacing: 0) {
                     ElfPx(look: game.s.look, height: 200).bob(4, 0.9)
-                    Px(Sprites.reindeer(rudolph: true), 54).bob(3, 0.65)
+                    ReindeerPx(name: game.sleighTeam.first ?? "Dasher", decos: game.decosOn(game.sleighTeam.first ?? "Dasher"), height: 54).bob(3, 0.65)
                 }
                 .position(x: w / 2, y: floorY + 70 - 100)
 

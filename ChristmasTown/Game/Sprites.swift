@@ -70,6 +70,14 @@ enum Sprites {
         image(key: "reindeer|\(rudolph)", rows: rows("reindeer"), recolor: ["N": rudolph ? 0xE5394B : 0x2B1D2E])
     }
 
+    /// A reindeer wearing its decorations (same order as Android: blanket, bells, scarf, lights).
+    static func reindeer(_ name: String, decos: Set<Deco>) -> UIImage {
+        var r = rows("reindeer")
+        for d in Deco.allCases where decos.contains(d) { r = overlay(r, rows(d.sprite)) }
+        let rudolph = name == "Rudolph"
+        return image(key: "rd|\(rudolph)|\(decos.sorted().map(\.rawValue))", rows: r, recolor: ["N": rudolph ? 0xFF2E3E : 0x2B1D2E])
+    }
+
     // MARK: Elves
 
     private static func shade(_ c: UInt32, _ f: Double) -> UInt32 {
@@ -123,4 +131,31 @@ struct ElfPx: View {
     let look: ElfLook
     let height: CGFloat
     var body: some View { Px(Sprites.elf(look), height) }
+}
+
+/// A reindeer with its decorations. Rudolph's nose glows (and pulses).
+struct ReindeerPx: View {
+    let name: String
+    let decos: Set<Deco>
+    let height: CGFloat
+    var flip = false
+    @State private var glow = false
+
+    var body: some View {
+        let img = Sprites.reindeer(name, decos: decos)
+        let px = height / max(img.size.height, 1)
+        ZStack(alignment: .topLeading) {
+            if name == "Rudolph" {
+                Circle()
+                    .fill(RadialGradient(colors: [Color(hex: 0xFF4050, opacity: 0.7), .clear], center: .center, startRadius: 0, endRadius: px * 6))
+                    .frame(width: px * 12, height: px * 12)
+                    .scaleEffect(glow ? 1.15 : 0.8)
+                    .opacity(glow ? 1 : 0.45)
+                    .offset(x: 1.5 * px - px * 6, y: 7.5 * px - px * 6)
+                    .onAppear { withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) { glow = true } }
+            }
+            Px(img, height)
+        }
+        .scaleEffect(x: flip ? -1 : 1, y: 1)
+    }
 }

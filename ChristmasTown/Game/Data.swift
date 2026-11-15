@@ -80,31 +80,40 @@ struct ElfLook: Codable, Hashable {
 // MARK: - Greenhouse, bakery, workshop, food
 
 enum Crop: String, Codable, CaseIterable {
-    case wheat, carrot, berry, cocoa
+    case wheat, carrot, berry, cocoa, ginger, peppermint
     var title: String { rawValue.capitalized }
-    var plural: String { ["wheat": "wheat", "carrot": "carrots", "berry": "berries", "cocoa": "cocoa pods"][rawValue]! }
-    var seedPrice: Int { ["wheat": 20, "carrot": 20, "berry": 40, "cocoa": 60][rawValue]! }
-    var growSeconds: Double { ["wheat": 10, "carrot": 10, "berry": 14, "cocoa": 18][rawValue]! }
-    var unlockLevel: Int { ["wheat": 1, "carrot": 1, "berry": 2, "cocoa": 3][rawValue]! }
+    var plural: String { ["wheat": "wheat", "carrot": "carrots", "berry": "berries", "cocoa": "cocoa pods", "ginger": "ginger roots", "peppermint": "peppermint leaves"][rawValue]! }
+    var seedPrice: Int { ["wheat": 20, "carrot": 20, "berry": 40, "cocoa": 60, "ginger": 70, "peppermint": 80][rawValue]! }
+    var growSeconds: Double { ["wheat": 10, "carrot": 10, "berry": 14, "cocoa": 18, "ginger": 20, "peppermint": 22][rawValue]! }
+    var unlockLevel: Int { ["wheat": 1, "carrot": 1, "berry": 2, "cocoa": 3, "ginger": 6, "peppermint": 7][rawValue]! }
     var sprite: String { rawValue }
 }
 
 let harvest = 3
 
 enum Cookie: String, Codable, CaseIterable {
-    case sugar, berryJam, choco
-    var title: String { ["sugar": "Sugar Cookie", "berryJam": "Berry Cookie", "choco": "Choc Chip Cookie"][rawValue]! }
-    var recipe: [(Crop, Int)] { self == .sugar ? [(.wheat, 2)] : self == .berryJam ? [(.wheat, 2), (.berry, 1)] : [(.wheat, 2), (.cocoa, 1)] }
-    var unlockLevel: Int { ["sugar": 1, "berryJam": 2, "choco": 3][rawValue]! }
-    var energy: Int { ["sugar": 15, "berryJam": 20, "choco": 25][rawValue]! }
-    var sprite: String { ["sugar": "cookie_sugar", "berryJam": "cookie_berry", "choco": "cookie_choco"][rawValue]! }
+    case sugar, berryJam, choco, gingerbread, candyCane, reindeer
+    var title: String { ["sugar": "Sugar Cookie", "berryJam": "Berry Cookie", "choco": "Choc Chip Cookie", "gingerbread": "Gingerbread Person", "candyCane": "Candy Cane Cookie", "reindeer": "Reindeer Cookie"][rawValue]! }
+    var recipe: [(Crop, Int)] {
+        switch self {
+        case .sugar: [(.wheat, 2)]
+        case .berryJam: [(.wheat, 2), (.berry, 1)]
+        case .choco: [(.wheat, 2), (.cocoa, 1)]
+        case .gingerbread: [(.wheat, 2), (.ginger, 1)]
+        case .candyCane: [(.wheat, 2), (.peppermint, 1)]
+        case .reindeer: [(.wheat, 2), (.cocoa, 1), (.berry, 1)]
+        }
+    }
+    var unlockLevel: Int { ["sugar": 1, "berryJam": 2, "choco": 3, "gingerbread": 6, "candyCane": 7, "reindeer": 8][rawValue]! }
+    var energy: Int { ["sugar": 15, "berryJam": 20, "choco": 25, "gingerbread": 30, "candyCane": 30, "reindeer": 40][rawValue]! }
+    var sprite: String { ["sugar": "cookie_sugar", "berryJam": "cookie_berry", "choco": "cookie_choco", "gingerbread": "cookie_ginger", "candyCane": "cookie_candycane", "reindeer": "cookie_reindeer"][rawValue]! }
 }
 
 enum Toy: String, Codable, CaseIterable {
-    case teddy, candyCane, train, doll, drum, robot
-    var title: String { ["teddy": "Teddy Bear", "candyCane": "Candy Cane", "train": "Toy Train", "doll": "Doll", "drum": "Drum", "robot": "Robot"][rawValue]! }
-    var unlockLevel: Int { ["teddy": 1, "candyCane": 1, "train": 2, "doll": 3, "drum": 4, "robot": 5][rawValue]! }
-    var sprite: String { self == .candyCane ? "candycane" : rawValue }
+    case teddy, candyCane, train, doll, drum, robot, rockingHorse, yoYo, snowGlobe
+    var title: String { ["teddy": "Teddy Bear", "candyCane": "Candy Cane", "train": "Toy Train", "doll": "Doll", "drum": "Drum", "robot": "Robot", "rockingHorse": "Rocking Horse", "yoYo": "Yo-Yo", "snowGlobe": "Snow Globe"][rawValue]! }
+    var unlockLevel: Int { ["teddy": 1, "candyCane": 1, "train": 2, "doll": 3, "drum": 4, "robot": 5, "rockingHorse": 6, "yoYo": 7, "snowGlobe": 8][rawValue]! }
+    var sprite: String { ["candyCane": "candycane", "rockingHorse": "rockinghorse", "yoYo": "yoyo", "snowGlobe": "snowglobe"][rawValue] ?? rawValue }
     var steps: [String] {
         switch self {
         case .teddy: ["Stuff it with cotton", "Sew it up", "Pick a fur color"]
@@ -113,6 +122,9 @@ enum Toy: String, Codable, CaseIterable {
         case .doll: ["Sew the face", "Brush the hair", "Pick a dress"]
         case .drum: ["Stretch the top", "Paint the drum", "Add the sticks"]
         case .robot: ["Bolt the body", "Charge the battery", "Pick a paint"]
+        case .rockingHorse: ["Carve the rockers", "Brush the mane", "Paint the saddle"]
+        case .yoYo: ["Wind the string", "Glue the halves", "Pick a color"]
+        case .snowGlobe: ["Shake in the snow", "Seal the glass", "Paint the base"]
         }
     }
 }
@@ -170,18 +182,35 @@ let startingHouse: [Placed] = [
 // MARK: - Reindeer, levels, jobs
 
 let reindeerNames = ["Dasher", "Dancer", "Prancer", "Vixen", "Comet", "Cupid", "Donner", "Blitzen", "Rudolph"]
-func reindeerCount(_ level: Int) -> Int { [2, 4, 6, 8, 9][max(0, min(4, level - 1))] }
+/// Rudolph (the last name) only joins at the top level.
+func reindeerCount(_ level: Int) -> Int { [2, 3, 4, 5, 6, 7, 8, 9][max(0, min(maxLevel - 1, level - 1))] }
 
-let levelTitles = ["Helper Elf", "Cookie Elf", "Toy Elf", "Sleigh Elf", "Santa's Best Elf"]
-let maxLevel = 5
+/// Things you can put on a reindeer in its care screen. They show everywhere the reindeer does.
+enum Deco: String, Codable, CaseIterable, Comparable {
+    case bells, scarf, lights, blanket
+    var title: String { ["bells": "Jingle Bells", "scarf": "Cozy Scarf", "lights": "Antler Lights", "blanket": "Saddle Blanket"][rawValue]! }
+    var emoji: String { ["bells": "🔔", "scarf": "🧣", "lights": "💡", "blanket": "🟥"][rawValue]! }
+    var price: Int { ["bells": 150, "scarf": 200, "lights": 250, "blanket": 300][rawValue]! }
+    var sprite: String { "rd_\(rawValue)" }
+    static func < (a: Deco, b: Deco) -> Bool { allCases.firstIndex(of: a)! < allCases.firstIndex(of: b)! }
+}
+
+/// Reindeer you've fully cared for and harnessed pull the sleigh better.
+let teamSize = 4
+
+let levelTitles = ["Helper Elf", "Cookie Elf", "Toy Elf", "Sleigh Elf", "Workshop Star", "Gift Wrapper", "Tree Trimmer", "Santa's Best Elf"]
+let maxLevel = 8
 let dailyPay = 1000
 let christmasEveWorkdays = 10
 
-func levelFor(_ workdays: Int) -> Int { workdays >= 8 ? 5 : workdays >= 6 ? 4 : workdays >= 4 ? 3 : workdays >= 2 ? 2 : 1 }
+/// Rudolph joins two days before Christmas Eve (10 workdays).
+func levelFor(_ workdays: Int) -> Int {
+    workdays >= 8 ? 8 : workdays >= 7 ? 7 : workdays >= 6 ? 6 : workdays >= 5 ? 5 : workdays >= 3 ? 4 : workdays >= 2 ? 3 : workdays >= 1 ? 2 : 1
+}
 
 enum JobKind: String, Codable {
-    case bake, toys, reindeer, sortList, deliver
-    var emoji: String { ["bake": "🍪", "toys": "🧸", "reindeer": "🦌", "sortList": "📜", "deliver": "🛷"][rawValue]! }
+    case bake, toys, reindeer, sortList, deliver, wrap, tree
+    var emoji: String { ["bake": "🍪", "toys": "🧸", "reindeer": "🦌", "sortList": "📜", "deliver": "🛷", "wrap": "🎁", "tree": "🎄"][rawValue]! }
 }
 
 struct Job: Codable, Hashable {
@@ -196,16 +225,72 @@ struct Job: Codable, Hashable {
         case .reindeer: "Feed & brush every reindeer"
         case .sortList: "Sort \(goal) kids on Santa's list"
         case .deliver: "Deliver \(goal) presents"
+        case .wrap: "Wrap \(goal) presents"
+        case .tree: "Decorate the Town Tree"
         }
     }
 }
 
 func jobsFor(_ level: Int) -> [Job] {
-    var jobs = [Job(kind: .bake, goal: [2, 3, 3, 4, 4][level - 1]), Job(kind: .toys, goal: [2, 3, 4, 5, 6][level - 1]), Job(kind: .reindeer, goal: 1)]
-    if level >= 2 { jobs.append(Job(kind: .sortList, goal: 5)) }
-    if level >= 3 { jobs.append(Job(kind: .deliver, goal: [0, 0, 4, 5, 6][level - 1])) }
+    let i = max(1, min(maxLevel, level)) - 1
+    var jobs = [Job(kind: .bake, goal: [2, 3, 3, 4, 4, 4, 5, 5][i]), Job(kind: .toys, goal: [2, 3, 4, 4, 5, 5, 5, 6][i]), Job(kind: .reindeer, goal: 1)]
+    if level >= 2 { jobs.append(Job(kind: .sortList, goal: [0, 5, 5, 5, 5, 5, 6, 6][i])) }
+    if level >= 3 { jobs.append(Job(kind: .deliver, goal: [0, 0, 4, 4, 5, 6, 6, 7][i])) }
+    if level >= 6 { jobs.append(Job(kind: .wrap, goal: [0, 0, 0, 0, 0, 2, 2, 3][i])) }
+    if level >= 7 { jobs.append(Job(kind: .tree, goal: 1)) }
     return jobs
 }
+
+/// How tricky the sleigh flight is: faster, more clouds, naughty houses, and a dark foggy night at the top.
+struct Flight { let speed: CGFloat; let cloudEvery: CGFloat; let naughtyChance: Double; let foggy: Bool }
+
+func flightFor(_ level: Int, christmasEve: Bool) -> Flight {
+    if christmasEve { return Flight(speed: 95, cloudEvery: 260, naughtyChance: 0.2, foggy: true) }
+    return Flight(speed: 70 + 5 * CGFloat(max(0, level - 3)),
+                  cloudEvery: [520, 520, 520, 460, 400, 340, 300, 260][max(0, min(7, level - 1))],
+                  naughtyChance: level >= 5 ? 0.25 : 0.15, foggy: level >= 8)
+}
+
+// MARK: - Pets (bought with in-game money only)
+
+enum PetKind: String, Codable, CaseIterable {
+    case penguin, puppy, kitten, bunny, owl, fox
+    var title: String { ["penguin": "Penguin", "puppy": "Puppy", "kitten": "Kitten", "bunny": "Bunny", "owl": "Snowy Owl", "fox": "Arctic Fox"][rawValue]! }
+    var price: Int { ["penguin": 600, "puppy": 700, "kitten": 700, "bunny": 650, "owl": 900, "fox": 1000][rawValue]! }
+    var sprite: String { "pet_\(rawValue)" }
+    var noise: String { ["penguin": "Squawk!", "puppy": "Woof!", "kitten": "Mew!", "bunny": "*thump thump*", "owl": "Hoo hoo!", "fox": "Yip yip!"][rawValue]! }
+    var food: String { ["penguin": "🐟", "puppy": "🦴", "kitten": "🐟", "bunny": "🥕", "owl": "🐭", "fox": "🍗"][rawValue]! }
+    var jokes: [String] {
+        switch self {
+        case .penguin: ["*waddles in a circle*", "*slides on its tummy* Wheee!", "*bows politely*", "I'm wearing a tuxedo because I'm FANCY."]
+        case .puppy: ["*chases own tail*", "*steals a sock* 🧦", "Is it walkies time?!", "*rolls over for tummy rubs*"]
+        case .kitten: ["*knocks an ornament off the tree*", "*naps in a box* 📦", "*bats at the tinsel*", "Purrrrr..."]
+        case .bunny: ["*binky jump!*", "*wiggles nose*", "*hides in a stocking*", "Carrot? CARROT?!"]
+        case .owl: ["*turns head ALL the way around*", "Hoo is the best elf? YOU!", "*fluffs feathers*", "*winks slowly*"]
+        case .fox: ["*pounces into a snow pile*", "*curls up with tail as a blanket*", "*does a happy zoomie*", "Yip! I hid your cookie. Somewhere."]
+        }
+    }
+}
+
+/// One pet you own. Meters are worked out from when you last fed, washed and played with it (seconds since 1970).
+struct Pet: Codable, Hashable, Identifiable {
+    var id: Int
+    var kind: PetKind
+    var name: String
+    var fedAt: Double = 0
+    var washedAt: Double = 0
+    var pettedAt: Double = 0
+    var giftDay = 0
+
+    func fullness(_ now: Double) -> Double { meter(fedAt, now, hours: 8) }
+    func cleanness(_ now: Double) -> Double { meter(washedAt, now, hours: 24) }
+    func happiness(_ now: Double) -> Double { meter(pettedAt, now, hours: 6) * 0.5 + fullness(now) * 0.25 + cleanness(now) * 0.25 }
+}
+
+/// 0…1 meters that go down slowly over real time (full → empty in `hours`).
+func meter(_ at: Double, _ now: Double, hours: Double) -> Double { at == 0 ? 0.3 : min(1, max(0, 1 - (now - at) / (hours * 3600))) }
+
+let petNames = ["Pip", "Biscuit", "Snowball", "Mochi", "Waffles", "Noodle", "Pickle", "Sprinkles", "Muffin", "Ziggy", "Bean", "Tinsel"]
 
 func money(_ n: Int) -> String {
     let f = NumberFormatter(); f.numberStyle = .decimal
@@ -270,7 +355,7 @@ let npcs: [Npc] = [
     Npc(name: "Sprout", look: ElfLook(girl: false, skin: 3, hairStyle: .bob, hairColor: 2, eye: 1, outfit: .tunic, outfitColor: 6, hat: .antlers, hatColor: 0, accessory: .bell), job: "Reindeer Keeper", lines: [
         "Reindeer love carrots! Grow them in the Greenhouse.",
         "Feed AND brush every reindeer to finish the reindeer job.",
-        "Rudolph joins the stable at Level 5. His nose glows!",
+        "Rudolph joins the stable at Level 8. His nose glows!",
         "Seeds need water before they grow. 💧",
     ], bestFriendGift: .poinsettia),
 ]
@@ -284,17 +369,17 @@ let partyThemes: [(String, Item)] = [("Candy Land 🍭", .gingerbreadHouse), ("W
 enum Side { case left, right }
 
 enum Place: String, CaseIterable, Identifiable {
-    case greenhouse, bakery, stable, workshop, santaList, sleigh, decorate, shop, closet, friends, phone, snacks
+    case greenhouse, bakery, stable, workshop, santaList, sleigh, park, decorate, shop, closet, friends, phone, snacks, pets
     var id: String { rawValue }
     var title: String {
-        ["greenhouse": "Greenhouse", "bakery": "Bakery", "stable": "Stable", "workshop": "Workshop", "santaList": "Santa's List", "sleigh": "Sleigh",
+        ["greenhouse": "Greenhouse", "bakery": "Bakery", "stable": "Stable", "workshop": "Workshop", "santaList": "Santa's List", "sleigh": "Sleigh", "park": "Snow Park", "pets": "Pets",
          "decorate": "Decorate", "shop": "Shop", "closet": "Closet", "friends": "Friends", "phone": "Phone", "snacks": "Snacks"][rawValue]!
     }
     var sprite: String {
-        ["greenhouse": "wheat", "bakery": "cookie_sugar", "stable": "reindeer", "workshop": "teddy", "santaList": "santa", "sleigh": "sleigh",
+        ["greenhouse": "wheat", "bakery": "cookie_sugar", "stable": "reindeer", "workshop": "teddy", "santaList": "santa", "sleigh": "sleigh", "park": "snowman", "pets": "pet_penguin",
          "decorate": "tree", "shop": "presents", "closet": "", "friends": "", "phone": "phone", "snacks": "cocoa_mug"][rawValue]!
     }
-    var side: Side { [.greenhouse, .bakery, .stable, .workshop, .santaList, .sleigh].contains(self) ? .left : .right }
+    var side: Side { [.greenhouse, .bakery, .stable, .workshop, .santaList, .sleigh, .park].contains(self) ? .left : .right }
     var color: Color {
         switch self {
         case .greenhouse: Color(hex: 0x3FAF5A)
@@ -308,7 +393,9 @@ enum Place: String, CaseIterable, Identifiable {
         case .closet: Color(hex: 0xFF8FB0)
         case .friends: Color(hex: 0x2EB5A5)
         case .snacks: Color(hex: 0xC98B5E)
+        case .park: Color(hex: 0x5BA4D9)
+        case .pets: Color(hex: 0xF2A93B)
         }
     }
-    var dark: Bool { [.decorate, .snacks, .phone, .stable, .santaList, .sleigh, .friends, .closet].contains(self) }
+    var dark: Bool { [.decorate, .snacks, .phone, .stable, .santaList, .sleigh, .friends, .closet, .park].contains(self) }
 }

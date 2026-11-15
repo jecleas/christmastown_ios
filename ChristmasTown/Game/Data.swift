@@ -469,3 +469,23 @@ let stickers: [Sticker] = {
 
 /// Sticker milestones and their prizes.
 let stickerPrizes: [(Int, Surprise)] = [(10, itemGift(.presents)), (25, hatGift(.topHat)), (40, itemGift(.toyChest)), (60, hatGift(.crown))]
+
+// MARK: - The house: two storeys to start, more floors as upgrades
+
+/// One floor of the house, bottom (0) to top. `price` is the upgrade cost (0 = you start with it).
+struct Room { let title: String; let emoji: String; let price: Int; let wall: UInt32; let stripe: UInt32 }
+
+let rooms = [
+    Room(title: "Living Room", emoji: "🛋️", price: 0, wall: 0xE3F0D8, stripe: 0xD3E6C4),
+    Room(title: "Bedroom", emoji: "🛏️", price: 0, wall: 0xF6D7E3, stripe: 0xEFC3D3),
+    Room(title: "Attic Playroom", emoji: "🧸", price: 3000, wall: 0xFFF1C9, stripe: 0xF6E2A6),
+    Room(title: "Starlight Loft", emoji: "🔭", price: 6000, wall: 0xD9D4F7, stripe: 0xC6BFF0),
+]
+let startFloors = 2
+
+/// Little things your pets get up to. "%@" is the pet's name.
+let petHappenings = [
+    "%@ is napping on the rug 💤", "%@ is chasing a dust bunny 🐾", "%@ found a sock! 🧦", "%@ is staring out the window ❄️",
+    "%@ is doing zoomies! 💨", "%@ is playing with a ribbon 🎀", "%@ is hiding under the bed 👀", "%@ is guarding the presents 🎁",
+]
+let roomHappenings = ["The fire is crackling 🔥", "Someone left cookie crumbs on the pillow 🍪", "The toy train is going round and round 🚂", "The stars are twinkling through the telescope ✨"]

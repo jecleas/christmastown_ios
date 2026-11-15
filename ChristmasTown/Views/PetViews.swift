@@ -150,6 +150,8 @@ private struct PetCareView: View {
                 }
             }
             Txt(hint(pet), 15, align: .center)
+            if game.mainPet?.id == pet.id { Txt("⭐ \(pet.name) is your main pet and stays by your side!", 14, Pal.darkGreen, align: .center) }
+            else { Btn("⭐ Make \(pet.name) my main pet", Pal.orange, size: 15) { game.setMainPet(pet.id) } }
             Txt("Keep every meter high and \(pet.name) finds you a little gift each day! 🎁", 13, Pal.brown, align: .center)
         }
     }

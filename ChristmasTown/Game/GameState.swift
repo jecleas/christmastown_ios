@@ -78,6 +78,9 @@ struct Save: Codable {
     var stickers: Set<String> = []
     var stickersSeen = 0
     var prizesClaimed: Set<Int> = []
+    // House & main pet (follow-up)
+    var floors = startFloors
+    var mainPet = 0
 
     init() {}
 
@@ -120,6 +123,7 @@ struct Save: Codable {
         decos = v(.decos, d.decos); reindeerDecos = v(.reindeerDecos, d.reindeerDecos); team = v(.team, d.team)
         adventYear = v(.adventYear, d.adventYear); adventOpened = v(.adventOpened, d.adventOpened); stickers = v(.stickers, d.stickers)
         stickersSeen = v(.stickersSeen, d.stickersSeen); prizesClaimed = v(.prizesClaimed, d.prizesClaimed)
+        floors = v(.floors, d.floors); mainPet = v(.mainPet, d.mainPet)
         addStickers()
     }
 }
@@ -605,7 +609,31 @@ final class GameState {
         }
     }
 
-    func switchFloor(_ id: Int) { update { save in if let i = save.placed.firstIndex(where: { $0.id == id }) { save.placed[i].floor = 1 - save.placed[i].floor } } }
+    /// Moves a thing to the next floor up (and back to the bottom from the top).
+    func switchFloor(_ id: Int) { update { save in if let i = save.placed.firstIndex(where: { $0.id == id }) { save.placed[i].floor = (save.placed[i].floor + 1) % save.floors } } }
+
+    // MARK: House upgrades & where the pets are
+
+    var nextRoom: Room? { s.floors < rooms.count ? rooms[s.floors] : nil }
+
+    func upgradeHouse() {
+        guard let room = nextRoom, pay(room.price) else { return }
+        update { $0.floors += 1 }
+        say("Your house has a new \(room.title)! \(room.emoji) Tap it in Decorate to look inside.")
+        Audio.shared.play(.levelUp)
+    }
+
+    /// Your main pet (the one by your side on the main screen). Defaults to your first pet.
+    var mainPet: Pet? { s.pets.first { $0.id == s.mainPet } ?? s.pets.first }
+
+    func setMainPet(_ id: Int) {
+        update { $0.mainPet = id }
+        if let p = s.pets.first(where: { $0.id == id }) { say("\(p.name) is your main pet now! ⭐ \(p.kind.noise)") }
+    }
+
+    /// Other pets wander from room to room: each one picks a new room every 20 minutes.
+    func petRoom(_ pet: Pet) -> Int { pet.id == mainPet?.id ? 0 : (Int(now / 1200) + pet.id * 7) % s.floors }
+    func petsIn(_ floor: Int) -> [Pet] { s.pets.filter { $0.id != mainPet?.id && petRoom($0) == floor } }
     func putAway(_ id: Int) { update { $0.placed.removeAll { $0.id == id } } }
 
     // MARK: Elf friends

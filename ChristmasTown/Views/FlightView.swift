@@ -141,6 +141,7 @@ struct DeliveryView: View {
                     finishing = true
                     sim.message = "All presents delivered! 🎉"
                     Audio.shared.play(.levelUp)
+                    game.sticker("flight")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) { game.endDelivery(finishedChristmas: true) }
                 }
             }

@@ -13,7 +13,7 @@ struct FriendsView: View {
     var body: some View {
         VStack(spacing: 10) {
             Txt("Tap an elf to talk to them!", 18, .white)
-            HStack(spacing: 6) {
+            ScrollView(.horizontal, showsIndicators: false) { HStack(spacing: 6) {
                 ForEach(npcs) { n in
                     Tap(action: { talking = n; line = 0; party = false; game.chat(n) }) {
                         VStack(spacing: 0) {
@@ -25,7 +25,7 @@ struct FriendsView: View {
                         .panel(n == talking ? Pal.paleGold : Pal.cream, border: n == talking ? Pal.red : Pal.ink)
                     }
                 }
-            }
+            } }
             VStack(spacing: 10) {
                 HStack(spacing: 10) {
                     ElfPx(look: talking.look, height: 120)

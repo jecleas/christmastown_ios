@@ -37,17 +37,17 @@ enum HairStyle: String, Codable, CaseIterable {
 }
 
 enum Outfit: String, Codable, CaseIterable {
-    case tunic, sweater, dress, overalls
-    var title: String { ["tunic": "Elf Tunic", "sweater": "Christmas Sweater", "dress": "Party Dress", "overalls": "Overalls"][rawValue]! }
-    var price: Int { ["tunic": 0, "sweater": 500, "dress": 400, "overalls": 450][rawValue]! }
+    case tunic, sweater, dress, overalls, pajamas, snowsuit
+    var title: String { ["tunic": "Elf Tunic", "sweater": "Christmas Sweater", "dress": "Party Dress", "overalls": "Overalls", "pajamas": "Polka Pajamas", "snowsuit": "Snowsuit"][rawValue]! }
+    var price: Int { ["tunic": 0, "sweater": 500, "dress": 400, "overalls": 450, "pajamas": 350, "snowsuit": 550][rawValue]! }
     var sprite: String? { self == .tunic ? nil : "outfit_\(rawValue)" }
 }
 
 enum Hat: String, Codable, CaseIterable {
-    case none, elf, beanie, santa, antlers, crown
-    var title: String { ["none": "No Hat", "elf": "Elf Hat", "beanie": "Beanie", "santa": "Santa Hat", "antlers": "Antlers", "crown": "Crown"][rawValue]! }
-    var price: Int { ["none": 0, "elf": 0, "beanie": 300, "santa": 600, "antlers": 500, "crown": 1500][rawValue]! }
-    var sprite: String? { self == .none ? nil : "hat_\(rawValue)" }
+    case none, elf, beanie, santa, antlers, crown, earmuffs, topHat
+    var title: String { ["none": "No Hat", "elf": "Elf Hat", "beanie": "Beanie", "santa": "Santa Hat", "antlers": "Antlers", "crown": "Crown", "earmuffs": "Earmuffs", "topHat": "Top Hat"][rawValue]! }
+    var price: Int { ["none": 0, "elf": 0, "beanie": 300, "santa": 600, "antlers": 500, "crown": 1500, "earmuffs": 350, "topHat": 700][rawValue]! }
+    var sprite: String? { self == .none ? nil : self == .topHat ? "hat_tophat" : "hat_\(rawValue)" }
 }
 
 enum Accessory: String, Codable, CaseIterable {
@@ -145,21 +145,22 @@ enum ItemKind { case furniture, decoration }
 enum Item: String, Codable, CaseIterable {
     case tree, fireplace, couch, armchair, bed, table, lamp, bookshelf, rug, clock, picture
     case stocking, wreath, garland, snowman, presents, poinsettia, gingerbreadHouse, candles
+    case rockingChair, toyChest, nutcracker, sled
 
     var title: String {
         ["tree": "Christmas Tree", "fireplace": "Fireplace", "couch": "Couch", "armchair": "Armchair", "bed": "Bed", "table": "Table",
          "lamp": "Lamp", "bookshelf": "Bookshelf", "rug": "Rug", "clock": "Clock", "picture": "Picture", "stocking": "Stocking",
          "wreath": "Wreath", "garland": "Twinkle Lights", "snowman": "Snowman", "presents": "Presents", "poinsettia": "Poinsettia",
-         "gingerbreadHouse": "Gingerbread House", "candles": "Candles"][rawValue]!
+         "gingerbreadHouse": "Gingerbread House", "candles": "Candles", "rockingChair": "Rocking Chair", "toyChest": "Toy Chest", "nutcracker": "Nutcracker", "sled": "Sled"][rawValue]!
     }
     var price: Int {
         ["tree": 800, "fireplace": 900, "couch": 600, "armchair": 400, "bed": 700, "table": 300, "lamp": 200, "bookshelf": 500, "rug": 250,
          "clock": 200, "picture": 150, "stocking": 100, "wreath": 150, "garland": 200, "snowman": 350, "presents": 300, "poinsettia": 150,
-         "gingerbreadHouse": 250, "candles": 120][rawValue]!
+         "gingerbreadHouse": 250, "candles": 120, "rockingChair": 450, "toyChest": 500, "nutcracker": 300, "sled": 350][rawValue]!
     }
-    var sprite: String { self == .gingerbreadHouse ? "ginghouse" : rawValue }
+    var sprite: String { ["gingerbreadHouse": "ginghouse", "rockingChair": "rockchair", "toyChest": "toychest"][rawValue] ?? rawValue }
     var spot: Spot { [.clock, .picture, .stocking, .wreath, .garland].contains(self) ? .wall : self == .rug ? .rug : .floor }
-    var kind: ItemKind { [.tree, .stocking, .wreath, .garland, .snowman, .presents, .poinsettia, .gingerbreadHouse, .candles].contains(self) ? .decoration : .furniture }
+    var kind: ItemKind { [.tree, .stocking, .wreath, .garland, .snowman, .presents, .poinsettia, .gingerbreadHouse, .candles, .nutcracker, .sled].contains(self) ? .decoration : .furniture }
 }
 
 /// One thing placed in the house. x/y are fractions of the room (0…1). Floor 0 = downstairs.
@@ -358,6 +359,20 @@ let npcs: [Npc] = [
         "Rudolph joins the stable at Level 8. His nose glows!",
         "Seeds need water before they grow. 💧",
     ], bestFriendGift: .poinsettia),
+    Npc(name: "Holly", look: ElfLook(girl: true, skin: 1, hairStyle: .bob, hairColor: 3, eye: 2, outfit: .overalls, outfitColor: 2, hat: .topHat, hatColor: 0), job: "Inventor", lines: [
+        "EUREKA! I invented a cookie that eats itself. Wait, that's bad.",
+        "Wrapped presents go on the sleigh first. I measured it! 📏",
+        "Happy reindeer steer better. That's SCIENCE. 🔬",
+        "My next invention: a snowball that comes back like a yo-yo!",
+        "Pets get hungry over time, so check on them every day! 🐾",
+    ], bestFriendGift: .toyChest),
+    Npc(name: "Frost", look: ElfLook(girl: false, skin: 0, hairStyle: .short, hairColor: 6, eye: 1, outfit: .snowsuit, outfitColor: 6, hat: .earmuffs, hatColor: 2), job: "Snow Sculptor", lines: [
+        "What do snowmen eat for breakfast? Frosted flakes! ❄️😂",
+        "I built a snowman of Santa. He said it looked 'a bit chilly'.",
+        "Snowball fight in the Snow Park? I'm SO in. Bring it! ⛄",
+        "Why did the reindeer cross the road? To get to the other SLEIGH! 🦌",
+        "The Town Tree needs ornaments, tinsel AND a star. Don't forget the star!",
+    ], bestFriendGift: .sled),
 ]
 
 func npc(_ name: String) -> Npc? { npcs.first { $0.name == name } }
@@ -366,20 +381,20 @@ let partyThemes: [(String, Item)] = [("Candy Land 🍭", .gingerbreadHouse), ("W
 
 // MARK: - The icons on the main screen
 
-enum Side { case left, right }
+enum Side { case left, right, hidden }   // hidden places open from the buttons at the bottom of the main screen
 
 enum Place: String, CaseIterable, Identifiable {
-    case greenhouse, bakery, stable, workshop, santaList, sleigh, park, decorate, shop, closet, friends, phone, snacks, pets
+    case greenhouse, bakery, stable, workshop, santaList, sleigh, park, decorate, shop, closet, friends, phone, snacks, pets, advent, stickers
     var id: String { rawValue }
     var title: String {
-        ["greenhouse": "Greenhouse", "bakery": "Bakery", "stable": "Stable", "workshop": "Workshop", "santaList": "Santa's List", "sleigh": "Sleigh", "park": "Snow Park", "pets": "Pets",
+        ["greenhouse": "Greenhouse", "bakery": "Bakery", "stable": "Stable", "workshop": "Workshop", "santaList": "Santa's List", "sleigh": "Sleigh", "park": "Snow Park", "pets": "Pets", "advent": "Advent Calendar", "stickers": "Sticker Book",
          "decorate": "Decorate", "shop": "Shop", "closet": "Closet", "friends": "Friends", "phone": "Phone", "snacks": "Snacks"][rawValue]!
     }
     var sprite: String {
-        ["greenhouse": "wheat", "bakery": "cookie_sugar", "stable": "reindeer", "workshop": "teddy", "santaList": "santa", "sleigh": "sleigh", "park": "snowman", "pets": "pet_penguin",
+        ["greenhouse": "wheat", "bakery": "cookie_sugar", "stable": "reindeer", "workshop": "teddy", "santaList": "santa", "sleigh": "sleigh", "park": "snowman", "pets": "pet_penguin", "advent": "gift", "stickers": "teddy",
          "decorate": "tree", "shop": "presents", "closet": "", "friends": "", "phone": "phone", "snacks": "cocoa_mug"][rawValue]!
     }
-    var side: Side { [.greenhouse, .bakery, .stable, .workshop, .santaList, .sleigh, .park].contains(self) ? .left : .right }
+    var side: Side { [.advent, .stickers].contains(self) ? .hidden : [.greenhouse, .bakery, .stable, .workshop, .santaList, .sleigh, .park].contains(self) ? .left : .right }
     var color: Color {
         switch self {
         case .greenhouse: Color(hex: 0x3FAF5A)
@@ -395,7 +410,62 @@ enum Place: String, CaseIterable, Identifiable {
         case .snacks: Color(hex: 0xC98B5E)
         case .park: Color(hex: 0x5BA4D9)
         case .pets: Color(hex: 0xF2A93B)
+        case .advent: Color(hex: 0xA02338)
+        case .stickers: Color(hex: 0x9B6BE0)
         }
     }
-    var dark: Bool { [.decorate, .snacks, .phone, .stable, .santaList, .sleigh, .friends, .closet, .park].contains(self) }
+    var dark: Bool { [.decorate, .snacks, .phone, .stable, .santaList, .sleigh, .friends, .closet, .park, .advent, .stickers].contains(self) }
 }
+
+// MARK: - Advent calendar (1–24 December, real dates)
+
+/// A surprise behind an advent door. `give` adds it to your save.
+struct Surprise {
+    let title: String
+    let sprite: String
+    let give: (inout Save) -> Void
+}
+
+private func itemGift(_ i: Item) -> Surprise { Surprise(title: i.title, sprite: i.sprite) { $0.owned[i, default: 0] += 1 } }
+private func foodGift(_ f: Food, _ n: Int = 1) -> Surprise { Surprise(title: n > 1 ? "\(n) \(f.title)" : f.title, sprite: f.sprite) { $0.food[f, default: 0] += n } }
+private func seedGift(_ c: Crop, _ n: Int) -> Surprise { Surprise(title: "\(n) \(c.title) seeds", sprite: c.sprite) { $0.seeds[c, default: 0] += n } }
+private func hatGift(_ h: Hat) -> Surprise { Surprise(title: h.title, sprite: "gift") { $0.hats.insert(h) } }
+private func outfitGift(_ o: Outfit) -> Surprise { Surprise(title: o.title, sprite: "gift") { $0.outfits.insert(o) } }
+
+/// Door 1…24. Day 24 is the best one.
+let adventSurprises: [Surprise] = [
+    foodGift(.candy, 2), itemGift(.stocking), foodGift(.hotCocoa), itemGift(.wreath), seedGift(.wheat, 6), itemGift(.candles),
+    itemGift(.poinsettia), foodGift(.pie), hatGift(.earmuffs), itemGift(.garland), itemGift(.nutcracker), seedGift(.carrot, 6),
+    itemGift(.snowman), itemGift(.sled), outfitGift(.pajamas), itemGift(.presents), seedGift(.ginger, 3), itemGift(.rockingChair),
+    foodGift(.hotCocoa, 2), itemGift(.toyChest), hatGift(.topHat), itemGift(.gingerbreadHouse), outfitGift(.snowsuit), hatGift(.crown),
+]
+
+/// Where each day's door sits in the 4 × 6 grid (mixed up, like a real calendar).
+let adventOrder = [13, 2, 20, 7, 17, 10, 4, 24, 15, 1, 9, 22, 6, 19, 12, 3, 23, 8, 16, 11, 21, 5, 18, 14]
+
+// MARK: - Sticker book: one sticker for everything you collect or do
+
+struct Sticker: Hashable { let id: String; let title: String; let sprite: String }
+
+/// Ids match Android (Kotlin enum names), so the two books line up.
+private func kname<T: RawRepresentable>(_ v: T) -> String where T.RawValue == String { v.rawValue.prefix(1).uppercased() + v.rawValue.dropFirst() }
+
+let stickers: [Sticker] = {
+    var out: [Sticker] = []
+    Cookie.allCases.forEach { out.append(Sticker(id: "cookie:\(kname($0))", title: "Baked a \($0.title)", sprite: $0.sprite)) }
+    Toy.allCases.forEach { out.append(Sticker(id: "toy:\(kname($0))", title: "Made a \($0.title)", sprite: $0.sprite)) }
+    reindeerNames.forEach { out.append(Sticker(id: "deer:\($0)", title: "Pampered \($0) (fed, brushed & washed)", sprite: "reindeer")) }
+    PetKind.allCases.forEach { out.append(Sticker(id: "pet:\(kname($0))", title: "Adopted a \($0.title)", sprite: $0.sprite)) }
+    Item.allCases.forEach { out.append(Sticker(id: "item:\(kname($0))", title: "Owned a \($0.title)", sprite: $0.sprite)) }
+    out += [
+        Sticker(id: "wrap", title: "Wrapped a present", sprite: "gift"), Sticker(id: "ginger", title: "Built a gingerbread house", sprite: "ginghouse"),
+        Sticker(id: "tree", title: "Decorated the Town Tree", sprite: "tree"), Sticker(id: "snowball", title: "Snowball champion (10 hits)", sprite: "snowman"),
+        Sticker(id: "flight", title: "Finished a sleigh flight", sprite: "sleigh"), Sticker(id: "friend", title: "Made a best friend", sprite: "candy"),
+        Sticker(id: "level8", title: "Became Santa's Best Elf", sprite: "santa"), Sticker(id: "christmas", title: "Saved Christmas!", sprite: "presents"),
+        Sticker(id: "advent", title: "Opened an advent door", sprite: "candycane"),
+    ]
+    return out
+}()
+
+/// Sticker milestones and their prizes.
+let stickerPrizes: [(Int, Surprise)] = [(10, itemGift(.presents)), (25, hatGift(.topHat)), (40, itemGift(.toyChest)), (60, hatGift(.crown))]

@@ -18,7 +18,8 @@ struct RootView: View {
 
     var song: Music {
         if game.overlay == .won || game.overlay == .christmasEve { return .joyToTheWorld }
-        if game.delivering { return game.christmasEveRide ? .joyToTheWorld : .sleighRide }
+        if game.delivering { return game.christmasEveRide ? .joyToTheWorld : .upOnTheHousetop }
+        if let song = game.gameSong, game.place != nil { return song }
         if creating { return .weWish }
         switch game.place {
         case nil: return .jingleBells
@@ -26,8 +27,10 @@ struct RootView: View {
         case .sleigh: return .sleighRide
         case .shop, .friends, .phone, .closet: return .weWish
         case .decorate, .snacks: return .silentNight
-        case .park: return .jingleBells
-        case .pets: return .weWish
+        case .park: return .oChristmasTree
+        case .pets: return .jollyOldStNicholas
+        case .advent: return .silentNight
+        case .stickers: return .jingleBells
         }
     }
 
@@ -102,6 +105,8 @@ struct RootView: View {
         case .snacks: SnacksView(game: game)
         case .park: ParkView(game: game)
         case .pets: PetsView(game: game)
+        case .advent: AdventView(game: game)
+        case .stickers: StickerView(game: game)
         }
     }
 }

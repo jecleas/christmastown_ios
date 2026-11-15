@@ -73,8 +73,32 @@ struct Save: Codable {
     var decos: Set<Deco> = []
     var reindeerDecos: [String: Set<Deco>] = [:]
     var team: [String] = []
+    var adventYear = 0
+    var adventOpened: Set<Int> = []
+    var stickers: Set<String> = []
+    var stickersSeen = 0
+    var prizesClaimed: Set<Int> = []
 
     init() {}
+
+    /// Adds stickers you've earned just by what's in your save (things you own, pets, friends...).
+    mutating func addStickers() {
+        func k<T: RawRepresentable>(_ v: T) -> String where T.RawValue == String { v.rawValue.prefix(1).uppercased() + v.rawValue.dropFirst() }
+        var earned: Set<String> = []
+        for (c, n) in cookies where n > 0 { earned.insert("cookie:\(k(c))") }
+        for (t, n) in toys where n > 0 { earned.insert("toy:\(k(t))") }
+        for r in fed.intersection(brushed).intersection(washed) { earned.insert("deer:\(r)") }
+        for p in pets { earned.insert("pet:\(k(p.kind))") }
+        for (i, n) in owned where n > 0 { earned.insert("item:\(k(i))") }
+        if wrapped > 0 { earned.insert("wrap") }
+        if gingerHouses > 0 { earned.insert("ginger") }
+        if !townTree.isEmpty { earned.insert("tree") }
+        if !bestGifts.isEmpty { earned.insert("friend") }
+        if levelFor(workdays) >= maxLevel { earned.insert("level8") }
+        if christmasDone { earned.insert("christmas") }
+        if !adventOpened.isEmpty { earned.insert("advent") }
+        if !earned.isSubset(of: stickers) { stickers.formUnion(earned) }
+    }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -94,6 +118,9 @@ struct Save: Codable {
         wrapped = v(.wrapped, d.wrapped); townTree = v(.townTree, d.townTree); snowballDay = v(.snowballDay, d.snowballDay)
         gingerHouses = v(.gingerHouses, d.gingerHouses); pets = v(.pets, d.pets); washed = v(.washed, d.washed)
         decos = v(.decos, d.decos); reindeerDecos = v(.reindeerDecos, d.reindeerDecos); team = v(.team, d.team)
+        adventYear = v(.adventYear, d.adventYear); adventOpened = v(.adventOpened, d.adventOpened); stickers = v(.stickers, d.stickers)
+        stickersSeen = v(.stickersSeen, d.stickersSeen); prizesClaimed = v(.prizesClaimed, d.prizesClaimed)
+        addStickers()
     }
 }
 
@@ -114,6 +141,8 @@ final class GameState {
     var christmasEveRide = false
     var selectedSeed: Crop = .wheat
     var now = Date().timeIntervalSince1970
+    /// A mini-game can ask for its own song while it's on screen.
+    var gameSong: Music?
 
     @ObservationIgnored private var toastUntil = 0.0
     @ObservationIgnored private var timer: Timer?
@@ -134,6 +163,7 @@ final class GameState {
 
     private func update(_ change: (inout Save) -> Void) {
         change(&s)
+        s.addStickers()
         if let data = try? JSONEncoder().encode(s) { UserDefaults.standard.set(data, forKey: Self.key) }
     }
 
@@ -489,6 +519,44 @@ final class GameState {
     func feedPet(_ id: Int) { petCare(id) { $0.fedAt = $1 } }
     func washPet(_ id: Int) { petCare(id) { $0.washedAt = $1 } }
     func cuddlePet(_ id: Int) { petCare(id) { $0.pettedAt = $1 } }
+
+    // MARK: Advent calendar
+
+    private var today: DateComponents { Calendar.current.dateComponents([.year, .month, .day], from: Date()) }
+    /// Doors you may open: 1…today in December (none before Dec 1). Missed days can still be opened.
+    var adventDay: Int { today.month == 12 ? min(24, today.day ?? 0) : 0 }
+    var daysToAdvent: Int {
+        guard today.month != 12, let dec1 = Calendar.current.date(from: DateComponents(year: today.year, month: 12, day: 1)) else { return 0 }
+        return Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: Date()), to: dec1).day ?? 0
+    }
+    var adventOpenedThisYear: Set<Int> { s.adventYear == today.year ? s.adventOpened : [] }
+
+    func openAdvent(_ door: Int) -> Surprise? {
+        guard door <= adventDay, !adventOpenedThisYear.contains(door) else { return nil }
+        let gift = adventSurprises[door - 1]
+        let year = today.year ?? 0
+        update { save in
+            if save.adventYear != year { save.adventOpened = [] }
+            save.adventYear = year
+            save.adventOpened.insert(door)
+            gift.give(&save)
+        }
+        Audio.shared.play(.levelUp)
+        return gift
+    }
+
+    // MARK: Sticker book
+
+    func sticker(_ id: String) { if !s.stickers.contains(id) { update { $0.stickers.insert(id) } } }
+    var newStickers: Int { max(0, s.stickers.count - s.stickersSeen) }
+    func sawStickers() { if s.stickersSeen != s.stickers.count { update { $0.stickersSeen = $0.stickers.count } } }
+
+    func claimPrize(_ at: Int) {
+        guard let prize = stickerPrizes.first(where: { $0.0 == at })?.1, s.stickers.count >= at, !s.prizesClaimed.contains(at) else { return }
+        update { $0.prizesClaimed.insert(at); prize.give(&$0) }
+        say("Sticker prize: \(prize.title)! 🎁")
+        Audio.shared.play(.levelUp)
+    }
 
     // MARK: Shop
 

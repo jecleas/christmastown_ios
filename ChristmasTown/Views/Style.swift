@@ -144,6 +144,8 @@ func placeBackground(_ p: Place?) -> LinearGradient {
     case .shop: colors = [0xE6DAFF, 0xC6B1F2]
     case .park: colors = [0x2C4F8C, 0x9BC8EE]
     case .pets: colors = [0xFFE3B0, 0xF7C27A]
+    case .advent: colors = [0x1D2B53, 0x7A1E2E]
+    case .stickers: colors = [0x5B3A8C, 0x9B6BE0]
     }
     return LinearGradient(colors: colors.map { Color(hex: $0) }, startPoint: .top, endPoint: .bottom)
 }

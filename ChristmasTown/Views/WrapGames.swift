@@ -96,6 +96,8 @@ struct WrapView: View {
             JobChip(game: game, kind: .wrap)
             if phase == .pick { pick } else { wrapping }
         }
+        .onAppear { game.gameSong = .twelveDays }
+        .onDisappear { if game.gameSong == .twelveDays { game.gameSong = nil } }
     }
 
     private var pick: some View {

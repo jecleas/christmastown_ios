@@ -342,8 +342,10 @@ private struct SnowballView: View {
             .gesture(SpatialTapGesture().onEnded { sim.tap($0.location) })
         }
         .onReceive(timer) { _ in
-            if sim.step(1.0 / 60) { game.snowballDone(hits: sim.hits, friends: sim.friends); playing = false }
+            if sim.step(1.0 / 60) { if sim.hits >= 10 { game.sticker("snowball") }; game.snowballDone(hits: sim.hits, friends: sim.friends); playing = false }
         }
+        .onAppear { game.gameSong = .goodKingWenceslas }
+        .onDisappear { if game.gameSong == .goodKingWenceslas { game.gameSong = nil } }
     }
 
     private var startCard: some View {

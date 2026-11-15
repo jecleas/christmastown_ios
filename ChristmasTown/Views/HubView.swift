@@ -48,8 +48,10 @@ struct HubView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
             HStack(spacing: 10) {
-                Btn(s.paidToday ? "📋 Jobs ✅" : "📋 Jobs \(game.jobsDone)/\(s.jobs.count)", s.paidToday ? Pal.green : Pal.red, size: 20) { game.showJobs = true }
-                Btn("💤 Sleep", Pal.night, size: 20) { if s.paidToday { game.sleep() } else { confirmSleep = true } }
+                Btn(s.paidToday ? "📋 Jobs ✅" : "📋 Jobs \(game.jobsDone)/\(s.jobs.count)", s.paidToday ? Pal.green : Pal.red, size: 16) { game.showJobs = true }
+                CornerButton(icon: "📅", color: Pal.darkRed, badge: game.adventDay > 0 && !Set(1...game.adventDay).isSubset(of: game.adventOpenedThisYear) ? "!" : nil) { game.go(.advent) }
+                CornerButton(icon: "📒", color: Pal.purple, badge: game.newStickers > 0 ? "\(game.newStickers)" : nil) { game.go(.stickers) }
+                Btn("💤 Sleep", Pal.night, size: 16) { if s.paidToday { game.sleep() } else { confirmSleep = true } }
             }
         }
         .padding(.horizontal, 10).padding(.vertical, 8)

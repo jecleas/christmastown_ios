@@ -107,12 +107,12 @@ enum Toy: String, Codable, CaseIterable {
     var sprite: String { self == .candyCane ? "candycane" : rawValue }
     var steps: [String] {
         switch self {
-        case .teddy: ["Stuff the fluff", "Sew it up", "Tie a bow"]
-        case .candyCane: ["Pull the sugar", "Add red stripes", "Bend the hook"]
-        case .train: ["Build the engine", "Add the wheels", "Paint it red"]
-        case .doll: ["Make the face", "Brush the hair", "Sew the dress"]
-        case .drum: ["Stretch the top", "Paint the stripes", "Add the sticks"]
-        case .robot: ["Bolt the body", "Add the lights", "Switch it on"]
+        case .teddy: ["Stuff it with cotton", "Sew it up", "Pick a fur color"]
+        case .candyCane: ["Pull the sugar", "Pick a stripe color", "Bend the hook"]
+        case .train: ["Build the engine", "Screw on the wheels", "Paint it"]
+        case .doll: ["Sew the face", "Brush the hair", "Pick a dress"]
+        case .drum: ["Stretch the top", "Paint the drum", "Add the sticks"]
+        case .robot: ["Bolt the body", "Charge the battery", "Pick a paint"]
         }
     }
 }

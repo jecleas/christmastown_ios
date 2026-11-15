@@ -142,6 +142,13 @@ final class GameState {
         return true
     }
 
+    /// Checks (without using) energy, so mini-games only start if you can finish them.
+    func hasEnergy(_ amount: Int) -> Bool {
+        if s.energy >= amount { return true }
+        say("Too tired! 😴 Eat a cookie or some food, or go to sleep."); Audio.shared.play(.oops)
+        return false
+    }
+
     func eat(_ f: Food) {
         guard s.food[f, default: 0] > 0 else { return }
         guard s.energy < 100 else { say("You're already full of energy! ⚡"); return }

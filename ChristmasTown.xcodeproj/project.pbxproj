@@ -30,6 +30,7 @@
 		97FFCC976BB3D51CDC4102A6 /* sfx_level_up.wav in Resources */ = {isa = PBXBuildFile; fileRef = 82D206F99F6402C154A7A4BA /* sfx_level_up.wav */; };
 		A237D02C455BBAC65D209ABC /* sfx_sleigh_bells.wav in Resources */ = {isa = PBXBuildFile; fileRef = F3A86A3007A1386E527F0596 /* sfx_sleigh_bells.wav */; };
 		AA2F38F2A1F36C59BAC2581C /* WorkViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A55FC90D9C4DAB15CDA5002E /* WorkViews.swift */; };
+		ADBF3705E71D2DCE8813F72E /* MiniGames.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45787A776C8A47E14898ED4C /* MiniGames.swift */; };
 		BA7DDE6C44257FA6A9371B3A /* sfx_cookie_ding.wav in Resources */ = {isa = PBXBuildFile; fileRef = A9C54403BFA0ED9A9353A1ED /* sfx_cookie_ding.wav */; };
 		BFDCE566B4D79BF775DAE43C /* Style.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6142440C5D9519B56B271D4B /* Style.swift */; };
 		C7A43D19A44A90022894F898 /* sfx_toy_pop.wav in Resources */ = {isa = PBXBuildFile; fileRef = 5250182E5CE64B89A80FD827 /* sfx_toy_pop.wav */; };
@@ -47,6 +48,7 @@
 		295C138BF908D04DB9DE208D /* sfx_present_drop.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = sfx_present_drop.wav; sourceTree = "<group>"; };
 		2990D7453E8CA1C3A027DD1E /* PixelifySans.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = PixelifySans.ttf; sourceTree = "<group>"; };
 		346E23D7A4E89B1D9CF9EC19 /* Chat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chat.swift; sourceTree = "<group>"; };
+		45787A776C8A47E14898ED4C /* MiniGames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniGames.swift; sourceTree = "<group>"; };
 		5250182E5CE64B89A80FD827 /* sfx_toy_pop.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = sfx_toy_pop.wav; sourceTree = "<group>"; };
 		6142440C5D9519B56B271D4B /* Style.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Style.swift; sourceTree = "<group>"; };
 		649A3BA679FE5962FDA52C04 /* PhoneViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneViews.swift; sourceTree = "<group>"; };
@@ -84,6 +86,7 @@
 			children = (
 				7DF18A9FD42B9C75ED4CDE47 /* HouseViews.swift */,
 				8A95B5FFF927F8CE22B9636A /* HubView.swift */,
+				45787A776C8A47E14898ED4C /* MiniGames.swift */,
 				649A3BA679FE5962FDA52C04 /* PhoneViews.swift */,
 				977418117B17EF0FB13453BE /* SantaViews.swift */,
 				6142440C5D9519B56B271D4B /* Style.swift */,
@@ -263,6 +266,7 @@
 				7BF552A7B66FB78D0B4C7166 /* GameState.swift in Sources */,
 				713E265E49B9BA3CA5029A04 /* HouseViews.swift in Sources */,
 				CC2324FE0E95BC555BFAB702 /* HubView.swift in Sources */,
+				ADBF3705E71D2DCE8813F72E /* MiniGames.swift in Sources */,
 				2209D39567360B9A30C77E83 /* PhoneViews.swift in Sources */,
 				501D0D08037F7C52557E16D6 /* SantaViews.swift in Sources */,
 				3E84974C1DC4542AE3D7F38C /* Sprites.swift in Sources */,

@@ -37,7 +37,7 @@ struct HubView: View {
             }
 
             ZStack(alignment: .top) {
-                LivingRoom(game: game)
+                RoomScene(game: game, floor: 0, hub: true)
                 HStack(alignment: .top) {
                     VStack(spacing: 6) { ForEach(Place.allCases.filter { $0.side == .left }) { PlaceIcon(game: game, place: $0) } }
                     Spacer()
@@ -145,20 +145,24 @@ struct PlaceIcon: View {
     }
 }
 
-/// Your downstairs room, big: the decorations you placed, your elf, a reindeer buddy and a table of goodies.
-struct LivingRoom: View {
+/// One room of your house, big. On the main screen (`hub`) it's the living room with your elf, your main pet,
+/// a reindeer buddy and a table of goodies. Zoomed in from Decorate it shows the pets in that room and what's going on.
+struct RoomScene: View {
     let game: GameState
+    let floor: Int
+    let hub: Bool
     private let pixel: CGFloat = 3.2
 
     var body: some View {
+        let room = rooms[min(max(0, floor), rooms.count - 1)]
         GeometryReader { geo in
             let w = geo.size.width, h = geo.size.height
             let floorY = h * 0.66
             ZStack(alignment: .topLeading) {
                 Canvas { ctx, size in
-                    ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(hex: 0xE3F0D8)))
+                    ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(hex: room.wall)))
                     var x: CGFloat = 0
-                    while x < w { ctx.fill(Path(CGRect(x: x, y: 0, width: 12, height: floorY)), with: .color(Color(hex: 0xD3E6C4))); x += 44 }
+                    while x < w { ctx.fill(Path(CGRect(x: x, y: 0, width: 12, height: floorY)), with: .color(Color(hex: room.stripe))); x += 44 }
                     let wx = w / 2 - 60, wy: CGFloat = 30
                     ctx.fill(Path(CGRect(x: wx - 5, y: wy - 5, width: 130, height: 110)), with: .color(Pal.ink))
                     ctx.fill(Path(CGRect(x: wx, y: wy, width: 120, height: 100)), with: .color(Pal.night))
@@ -173,7 +177,7 @@ struct LivingRoom: View {
                     while y < h { ctx.fill(Path(CGRect(x: 0, y: y, width: size.width, height: 3)), with: .color(Color(hex: 0x7A4428))); y += 22 }
                 }
 
-                ForEach(game.s.placed.filter { $0.floor == 0 }.sorted { ($0.item.spot == .rug ? 0 : 1) < ($1.item.spot == .rug ? 0 : 1) }, id: \.id) { p in
+                ForEach(game.s.placed.filter { $0.floor == floor }.sorted { ($0.item.spot == .rug ? 0 : 1) < ($1.item.spot == .rug ? 0 : 1) }, id: \.id) { p in
                     let img = Sprites.named(p.item.sprite)
                     let ih = img.size.height * pixel
                     let cx = 14 + p.x * (w - 28)
@@ -185,33 +189,70 @@ struct LivingRoom: View {
                     Px(img, ih).position(x: cx, y: top + ih / 2)
                 }
 
-                // Your elf and a baby reindeer buddy
-                HStack(alignment: .bottom, spacing: 0) {
-                    ElfPx(look: game.s.look, height: 200).bob(4, 0.9)
-                    ReindeerPx(name: game.sleighTeam.first ?? "Dasher", decos: game.decosOn(game.sleighTeam.first ?? "Dasher"), height: 54).bob(3, 0.65)
+                if hub {
+                    // Your elf and a baby reindeer buddy
+                    HStack(alignment: .bottom, spacing: 0) {
+                        ElfPx(look: game.s.look, height: 200).bob(4, 0.9)
+                        ReindeerPx(name: game.sleighTeam.first ?? "Dasher", decos: game.decosOn(game.sleighTeam.first ?? "Dasher"), height: 54).bob(3, 0.65)
+                    }
+                    .position(x: w / 2, y: floorY + 70 - 100)
+                    // Your main pet sits on the floor right in front of you
+                    if let pet = game.mainPet { MainPetView(pet: pet).position(x: w / 2 + 56, y: floorY + 70) }
                 }
-                .position(x: w / 2, y: floorY + 70 - 100)
 
-                // Your pets wander around (tap them!)
-                ForEach(Array(game.s.pets.prefix(3).enumerated()), id: \.element.id) { i, pet in
+                // The other pets wander around this room (tap them!)
+                let here = game.petsIn(floor)
+                ForEach(Array(here.prefix(4).enumerated()), id: \.element.id) { i, pet in
                     WanderingPet(pet: pet, roomW: w, floorY: floorY + 40, index: i, now: game.now)
                 }
 
-                // Table of today's goodies
-                VStack(spacing: 0) {
-                    let goodies = Cookie.allCases.flatMap { c in Array(repeating: c.sprite, count: min(game.s.cookies[c, default: 0], 3)) }
-                        + Toy.allCases.flatMap { t in Array(repeating: t.sprite, count: min(game.s.toys[t, default: 0], 2)) }
-                    HStack(alignment: .bottom, spacing: 2) {
-                        if goodies.isEmpty {
-                            Txt("Bake cookies & make toys!", 13, .white).padding(.horizontal, 6).background(RoundedRectangle(cornerRadius: 5).fill(Pal.ink.opacity(0.6)))
+                if hub {
+                    // Table of today's goodies
+                    VStack(spacing: 0) {
+                        let goodies = Cookie.allCases.flatMap { c in Array(repeating: c.sprite, count: min(game.s.cookies[c, default: 0], 3)) }
+                            + Toy.allCases.flatMap { t in Array(repeating: t.sprite, count: min(game.s.toys[t, default: 0], 2)) }
+                        HStack(alignment: .bottom, spacing: 2) {
+                            if goodies.isEmpty {
+                                Txt("Bake cookies & make toys!", 13, .white).padding(.horizontal, 6).background(RoundedRectangle(cornerRadius: 5).fill(Pal.ink.opacity(0.6)))
+                            }
+                            ForEach(Array(goodies.prefix(7).enumerated()), id: \.offset) { _, g in Px(g, 34) }
                         }
-                        ForEach(Array(goodies.prefix(7).enumerated()), id: \.offset) { _, g in Px(g, 34) }
+                        .frame(height: 38, alignment: .bottom)
+                        Color.clear.frame(width: 244, height: 10).panel(Color(hex: 0xC98B5E), radius: 5)
                     }
-                    .frame(height: 38, alignment: .bottom)
-                    Color.clear.frame(width: 244, height: 10).panel(Color(hex: 0xC98B5E), radius: 5)
+                    .position(x: w / 2, y: h - 32)
+                } else {
+                    // What's happening in here?
+                    let hour = Int(game.now / 1200)
+                    let news = here.map { String(format: petHappenings[($0.id + hour) % petHappenings.count], $0.name) } + [roomHappenings[min(max(0, floor), roomHappenings.count - 1)]]
+                    VStack(alignment: .leading, spacing: 3) {
+                        Txt("\(room.emoji) \(room.title)", 15, Pal.red)
+                        ForEach(news, id: \.self) { Txt($0, 12) }
+                        if here.isEmpty && !game.s.pets.isEmpty { Txt("No pets in here right now. They move around! 🐾", 12, Pal.brown) }
+                    }
+                    .padding(8).frame(width: 220, alignment: .leading).panel(.white.opacity(0.92)).padding(8)
                 }
-                .position(x: w / 2, y: h - 32)
             }
+        }
+    }
+}
+
+/// Your main pet sits next to you on the main screen and reacts when you tap it.
+private struct MainPetView: View {
+    let pet: Pet
+    @State private var said: String?
+    @State private var jump = false
+    var body: some View {
+        VStack(spacing: 0) {
+            if let said { Txt(said, 11, align: .center).padding(3).frame(width: 110).panel(.white, radius: 6) }
+            Tap(action: {
+                said = pet.kind.jokes.randomElement()
+                Audio.shared.play(.pop)
+                withAnimation(.easeOut(duration: 0.15)) { jump = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { withAnimation(.easeIn(duration: 0.3)) { jump = false } }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { said = nil }
+            }) { Px(pet.kind.sprite, 64).bob(3, 0.5).offset(y: jump ? -30 : 0) }
+            Txt("⭐ \(pet.name)", 11, .white).padding(.horizontal, 4).background(RoundedRectangle(cornerRadius: 5).fill(Pal.ink.opacity(0.7)))
         }
     }
 }

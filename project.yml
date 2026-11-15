@@ -19,8 +19,8 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown]
         UIStatusBarHidden: true
-        CFBundleShortVersionString: "0.6"
-        CFBundleVersion: "6"
+        CFBundleShortVersionString: "0.7"
+        CFBundleVersion: "7"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lexi.christmastown

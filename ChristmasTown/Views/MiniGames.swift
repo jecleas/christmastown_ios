@@ -41,8 +41,13 @@ struct BakeryView: View {
     @State private var tool = Topping.sprinkles
     @State private var tops: [Top] = []
     @State private var bakeStart = Date()
+    @State private var house = false
 
     var body: some View {
+        if house { GingerbreadView(game: game) { house = false } } else { bakery }
+    }
+
+    private var bakery: some View {
         VStack(spacing: 10) {
             JobChip(game: game, kind: .bake)
             switch phase {
@@ -85,6 +90,10 @@ struct BakeryView: View {
                     }
                 }
                 .padding(8).panel(locked ? Color(hex: 0xD5DBE6) : .white)
+            }
+            Btn("🏠 Build a Gingerbread House (3 wheat, ⚡5)", Color(hex: 0x8A5A3A), size: 15) {
+                if !game.canBuildHouse() { game.say("A gingerbread house needs 3 wheat! Grow some in the Greenhouse 🌾"); Audio.shared.play(.oops) }
+                else if game.hasEnergy(5) { house = true }
             }
         }
     }
@@ -257,17 +266,6 @@ private struct CookieCanvas: View {
     }
 }
 
-private func starPath(_ c: CGPoint, _ outer: CGFloat, _ inner: CGFloat) -> Path {
-    var p = Path()
-    for i in 0..<10 {
-        let r = i % 2 == 0 ? outer : inner
-        let a = -CGFloat.pi / 2 + CGFloat(i) * .pi / 5
-        let pt = CGPoint(x: c.x + r * cos(a), y: c.y + r * sin(a))
-        if i == 0 { p.move(to: pt) } else { p.addLine(to: pt) }
-    }
-    p.closeSubpath()
-    return p
-}
 
 // ======================================================================
 // MARK: - Workshop: every toy step is a little game
@@ -281,12 +279,14 @@ private func kinds(_ t: Toy) -> [StepKind] {
     case .candyCane: [.fill, .paint, .dots]
     case .train, .doll, .robot: [.dots, .fill, .paint]
     case .drum: [.fill, .paint, .dots]
+    case .rockingHorse: [.dots, .fill, .paint]
+    case .yoYo, .snowGlobe: [.fill, .dots, .paint]
     }
 }
 
 /// Which pixel letter in the toy's sprite gets your chosen color.
 private func paintChar(_ t: Toy) -> Character {
-    switch t { case .teddy: "b"; case .doll: "p"; case .robot: "y"; default: "r" }
+    switch t { case .teddy: "b"; case .doll: "p"; case .robot: "y"; case .snowGlobe: "d"; default: "r" }
 }
 
 private func fillHint(_ t: Toy) -> String {
@@ -297,11 +297,14 @@ private func fillHint(_ t: Toy) -> String {
     case .doll: "Tap to brush her hair! 💇"
     case .drum: "Tap to stretch the drum skin tight! 🥁"
     case .robot: "Tap to charge the battery! ⚡"
+    case .rockingHorse: "Tap to brush the mane! 🐴"
+    case .yoYo: "Tap to wind the string round and round! 🌀"
+    case .snowGlobe: "Tap to shake in the snow! ❄️"
     }
 }
 
 private func fillPuff(_ t: Toy) -> String {
-    switch t { case .teddy: "☁️"; case .candyCane: "✨"; case .train: "🔩"; case .doll: "💫"; case .drum: "💥"; case .robot: "⚡" }
+    switch t { case .teddy: "☁️"; case .candyCane: "✨"; case .train: "🔩"; case .doll: "💫"; case .drum: "💥"; case .robot: "⚡"; case .rockingHorse: "✨"; case .yoYo: "🌀"; case .snowGlobe: "❄️" }
 }
 
 private let fillTaps = 10
@@ -309,7 +312,28 @@ private let toyPaints: [UInt32] = [0x9A5B34, 0xE5394B, 0x3D6FD6, 0x3FAF5A, 0x9B6
 private let dotSpots: [(CGFloat, CGFloat)] = [(0.2, 0.3), (0.5, 0.12), (0.8, 0.3), (0.76, 0.78), (0.24, 0.78)]
 private let benchW: CGFloat = 294, benchH: CGFloat = 254
 
+private enum ShopMode: String, CaseIterable { case make = "🔨 Make toys", wrap = "🎁 Wrap presents" }
+
 struct WorkshopView: View {
+    let game: GameState
+    @State private var mode: ShopMode = .make
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Tabs(options: ShopMode.allCases, selected: mode, label: { $0.rawValue }) { mode = $0 }
+            switch mode {
+            case .make: ToyMakerView(game: game)
+            case .wrap: WrapView(game: game)
+            }
+        }
+        .onAppear {
+            let s = game.s
+            if s.jobs.contains(where: { $0.kind == .wrap && !$0.finished }) && s.toys.values.reduce(0, +) > 0 && s.jobs.first(where: { $0.kind == .toys })?.finished == true { mode = .wrap }
+        }
+    }
+}
+
+private struct ToyMakerView: View {
     let game: GameState
     @State private var toy = Toy.teddy
     @State private var step = 0          // 0 = not started, 1…3 = which step
@@ -424,87 +448,3 @@ struct WorkshopView: View {
     }
 }
 
-// ======================================================================
-// MARK: - Stable: feed carrots bite by bite, rub to brush
-// ======================================================================
-
-struct StableView: View {
-    let game: GameState
-    var body: some View {
-        VStack(spacing: 10) {
-            JobChip(game: game, kind: .reindeer)
-            HStack(spacing: 4) { Px("carrot", 24); Txt("Carrots ×\(game.s.crops[.carrot, default: 0])  ·  Rub a reindeer to brush it!", 14) }
-                .padding(.horizontal, 10).padding(.vertical, 4).panel()
-            ScrollView {
-                LazyVGrid(columns: [GridItem(.fixed(198), spacing: 8), GridItem(.fixed(198), spacing: 8)], spacing: 8) {
-                    ForEach(game.reindeer, id: \.self) { ReindeerCard(game: game, name: $0) }
-                }
-            }
-        }
-    }
-}
-
-private let rubDistance: CGFloat = 450   // how far you rub to finish brushing
-
-private struct ReindeerCard: View {
-    let game: GameState
-    let name: String
-    @State private var bites = -1        // -1 = no carrot out
-    @State private var rubbed: CGFloat = 0
-    @State private var last: CGSize = .zero
-
-    var body: some View {
-        let fed = game.s.fed.contains(name), brushed = game.s.brushed.contains(name), rudolph = name == "Rudolph"
-        VStack(spacing: 4) {
-            ZStack(alignment: .bottom) {
-                Px(Sprites.reindeer(rudolph: rudolph), 80).bob(fed && brushed ? 6 : 2, fed && brushed ? 0.4 : 0.9)
-                if !brushed && rubbed > 0 {
-                    ForEach(0..<min(7, Int(rubbed / 60)), id: \.self) { i in
-                        Txt("✨", 14).position(x: CGFloat(18 + (i * 37) % 150), y: CGFloat(14 + (i * 23) % 60))
-                    }
-                }
-                if bites >= 0 {
-                    Tap(action: {
-                        bites += 1
-                        Audio.shared.play(.munch)
-                        if bites >= 3 { game.feed(name); bites = -1 }
-                    }) { Px("carrot", CGFloat(46 - bites * 12)) }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                }
-            }
-            .frame(maxWidth: .infinity).frame(height: 100)
-            .contentShape(Rectangle())
-            .gesture(DragGesture(minimumDistance: 2)
-                .onChanged { v in
-                    guard !game.s.brushed.contains(name) else { return }
-                    let d = hypot(v.translation.width - last.width, v.translation.height - last.height)
-                    last = v.translation
-                    let before = rubbed
-                    rubbed += d
-                    if Int(rubbed / 90) > Int(before / 90) { Audio.shared.play(.tap) }
-                    if rubbed >= rubDistance { game.brush(name) }
-                }
-                .onEnded { _ in last = .zero })
-
-            Txt(rudolph ? "\(name) 🔴" : name, 17)
-            if bites >= 0 {
-                Txt("Tap the carrot! 🥕 (\(bites)/3 bites)", 13, Pal.darkGreen)
-            } else if !brushed {
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3).fill(.white).frame(width: 170, height: 10).overlay(RoundedRectangle(cornerRadius: 3).stroke(Pal.ink, lineWidth: 1))
-                    RoundedRectangle(cornerRadius: 3).fill(Pal.gold).frame(width: 170 * min(1, rubbed / rubDistance), height: 10)
-                }
-            } else {
-                Txt((fed ? "🥕✅ " : "🥕❌ ") + "🪮✅", 13)
-            }
-            HStack(spacing: 6) {
-                Btn(fed ? "Fed ✅" : "Feed 🥕", Pal.orange, size: 13, enabled: !fed && bites < 0) {
-                    if game.s.crops[.carrot, default: 0] <= 0 { game.feed(name) }   // shows the "no carrots" message
-                    else if game.hasEnergy(2) { bites = 0 }
-                }
-                Txt(brushed ? "Shiny ✨" : "Rub me!", 13, brushed ? Pal.darkGreen : Pal.ink, align: .center).frame(maxWidth: .infinity)
-            }
-        }
-        .padding(8).panel(fed && brushed ? Pal.paleGreen : Pal.cream)
-    }
-}

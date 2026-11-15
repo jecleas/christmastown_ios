@@ -88,9 +88,13 @@ struct HubView: View {
     case .greenhouse: return s.plots.contains { [1, 3].contains($0.stage(game.now)) } ? "!" : nil
     case .bakery: return job(.bake, unlock: 1)
     case .stable: return job(.reindeer, unlock: 1)
-    case .workshop: return job(.toys, unlock: 1)
+    case .workshop:
+        if s.jobs.first(where: { $0.kind == .toys })?.finished == true && s.jobs.first(where: { $0.kind == .wrap })?.finished == false && !s.paidToday { return "!" }
+        return job(.toys, unlock: 1)
     case .santaList: return job(.sortList, unlock: 2)
     case .sleigh: return job(.deliver, unlock: 3)
+    case .park: return s.jobs.contains { $0.kind == .tree } ? job(.tree, unlock: 7) : s.snowballDay != s.day ? "!" : nil
+    case .pets: return s.pets.contains { $0.fullness(game.now) < 0.4 || $0.cleanness(game.now) < 0.4 } ? "!" : nil
     case .decorate: return Item.allCases.contains { game.available($0) > 0 } ? "New" : nil
     case .friends: return npcs.contains { !s.talkedToday.contains($0.name) } ? "!" : nil
     case .phone:
@@ -185,6 +189,11 @@ struct LivingRoom: View {
                     ReindeerPx(name: game.sleighTeam.first ?? "Dasher", decos: game.decosOn(game.sleighTeam.first ?? "Dasher"), height: 54).bob(3, 0.65)
                 }
                 .position(x: w / 2, y: floorY + 70 - 100)
+
+                // Your pets wander around (tap them!)
+                ForEach(Array(game.s.pets.prefix(3).enumerated()), id: \.element.id) { i, pet in
+                    WanderingPet(pet: pet, roomW: w, floorY: floorY + 40, index: i, now: game.now)
+                }
 
                 // Table of today's goodies
                 VStack(spacing: 0) {

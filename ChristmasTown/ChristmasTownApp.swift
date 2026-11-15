@@ -26,6 +26,8 @@ struct RootView: View {
         case .sleigh: return .sleighRide
         case .shop, .friends, .phone, .closet: return .weWish
         case .decorate, .snacks: return .silentNight
+        case .park: return .jingleBells
+        case .pets: return .weWish
         }
     }
 
@@ -98,6 +100,8 @@ struct RootView: View {
         case .friends: FriendsView(game: game)
         case .phone: PhoneView(game: game)
         case .snacks: SnacksView(game: game)
+        case .park: ParkView(game: game)
+        case .pets: PetsView(game: game)
         }
     }
 }
@@ -187,8 +191,11 @@ struct OverlayCard: View {
         switch level {
         case 2: "New: Toy trains 🚂, berry cookies, Santa's naughty/nice list, more reindeer!"
         case 3: "New: Dolls, choc chip cookies, sleigh deliveries 🛷, a bigger greenhouse, more reindeer!"
-        case 4: "New: Drums 🥁 and more reindeer!"
-        case 5: "New: Robots 🤖 and RUDOLPH joins the stable! 🔴"
+        case 4: "New: Drums 🥁, more reindeer and trickier sleigh rides!"
+        case 5: "New: Robots 🤖, another reindeer and windier sleigh rides! ☁️"
+        case 6: "New: Rocking horses 🐴, gingerbread people, ginger seeds, a reindeer, and Santa wants presents WRAPPED 🎁"
+        case 7: "New: Yo-yos, candy cane cookies, peppermint seeds, a reindeer, and the Town Tree needs decorating 🎄"
+        case 8: "New: Snow globes, reindeer cookies, foggy sleigh nights... and RUDOLPH joins the stable! His nose glows! 🔴"
         default: ""
         }
     }

@@ -371,7 +371,7 @@ final class GameState {
     func wash(_ name: String) {
         guard !s.washed.contains(name), useEnergy(2) else { return }
         update { $0.washed.insert(name) }
-        say("\(name) is squeaky clean! 🫧")
+        say("\(name) is squeaky clean! 🛁")
         Audio.shared.play(.ding)
     }
 

@@ -24,3 +24,7 @@ This branch mirrors the Android `feature/christmas-expansion` work (same rules, 
 4. Play through with a Level 8 save: wrap a present, build a gingerbread house, decorate the Town Tree, play a snowball fight, fly a foggy Level 8 delivery with Rudolph hitched, adopt a pet and feed/wash/cuddle it, dress a reindeer and check the decorations show in the Stable, hub and sleigh.
 5. Load an old (pre-expansion) save and check nothing is lost.
 6. iPad: the stage is scaled, but check the 7-icon columns on the hub still fit.
+
+## Follow-up branch `feature/house-and-main-pet`
+- Main pet (pick it in Pets; sits in front of you on the main screen) and a house that starts with two storeys and can add an Attic Playroom ($3,000) and a Starlight Loft ($6,000). Tap a room in Decorate to zoom in and see the pets in it and what's happening. New `Save` fields `floors` (default 2) and `mainPet` (default 0 = first pet).
+- Check on a Mac: tapping a room vs dragging furniture on top of it in `HouseViews.swift` (furniture should win the drag), and the zoomed `RoomScene` sizing.
